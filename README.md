@@ -47,12 +47,14 @@ MCP Server for Godot project files - AI-native infrastructure for Godot developm
 
 - ✅ Basic MCP Server framework
 - ✅ `ping` - Test connectivity
-- ✅ `list_scenes` - List all `.tscn` files in a project
-- 🚧 `read_scene` - Read a scene file (in progress)
+- ✅ `list_scenes` - List all `.tscn` files in a project (with directory scanning)
+- ✅ `read_scene` - Read and parse a scene file (basic implementation)
 - 📅 `create_scene` - Create a new scene (planned)
 - 📅 `add_node` - Add a node to a scene (planned)
 - 📅 `edit_node` - Edit node properties (planned)
 - 📅 `run_project` - Run Godot project (planned)
+
+**Note**: The `.tscn` parser is implemented but still needs improvement to correctly parse all nodes in complex scenes. Currently, it can parse the file header and root node correctly.
 
 ### Planned Features (Phase 3-4)
 
