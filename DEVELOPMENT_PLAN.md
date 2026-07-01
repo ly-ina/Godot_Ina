@@ -53,26 +53,27 @@
 - [ ] 4.2.4 `move_node` — 移动节点到不同父节点
 - [ ] 4.2.5 `merge_scenes` — 将一个场景的节点树合并到另一个场景
 - [ ] 4.2.6 `validate_scene` — 校验 `.tscn` 格式 + 资源引用完整性
+- [ ] 4.2.7 `execute_gdscript` — 通过 Godot CLI 执行 GDScript 代码片段（写入临时文件 → 执行 → 清理 → 返回结果）
 
 #### 资源管理工具
-- [ ] 4.2.7 `list_resources` — 列出项目所有资源文件（图片、音频、字体等）
-- [ ] 4.2.8 `import_resource` — 导入新资源文件到项目
-- [ ] 4.2.9 `edit_resource` — 修改资源的导入设置（`.import` 文件）
+- [ ] 4.2.8 `list_resources` — 列出项目所有资源文件（图片、音频、字体等）
+- [ ] 4.2.9 `import_resource` — 导入新资源文件到项目
+- [ ] 4.2.10 `edit_resource` — 修改资源的导入设置（`.import` 文件）
 
 #### 项目配置工具
-- [ ] 4.2.10 `read_project_settings` — 读取 `project.godot` 配置
-- [ ] 4.2.11 `edit_project_settings` — 修改 `project.godot` 配置（应用名、图标、输入映射等）
-- [ ] 4.2.12 `list_autoloads` — 列出项目自动加载的脚本/场景
+- [ ] 4.2.11 `read_project_settings` — 读取 `project.godot` 配置
+- [ ] 4.2.12 `edit_project_settings` — 修改 `project.godot` 配置（应用名、图标、输入映射等）
+- [ ] 4.2.13 `list_autoloads` — 列出项目自动加载的脚本/场景
 
 #### 搜索与查询工具
-- [ ] 4.2.13 `search_nodes` — 跨场景搜索节点（按名称/类型/属性过滤）
-- [ ] 4.2.14 `search_resources` — 搜索资源文件（按类型/名称/标签）
-- [ ] 4.2.15 `list_dependencies` — 列出场景依赖的资源文件
+- [ ] 4.2.14 `search_nodes` — 跨场景搜索节点（按名称/类型/属性过滤）
+- [ ] 4.2.15 `search_resources` — 搜索资源文件（按类型/名称/标签）
+- [ ] 4.2.16 `list_dependencies` — 列出场景依赖的资源文件
 
 #### 工程管理工具
-- [ ] 4.2.16 `export_project` — 调用 Godot CLI 导出项目（Android/iOS/Windows/Linux/Web）
-- [ ] 4.2.17 `backup_project` — 备份项目为时间戳压缩包
-- [ ] 4.2.18 `diff_scene` — 对比两个场景文件的节点差异
+- [ ] 4.2.17 `export_project` — 调用 Godot CLI 导出项目（Android/iOS/Windows/Linux/Web）
+- [ ] 4.2.18 `backup_project` — 备份项目为时间戳压缩包
+- [ ] 4.2.19 `diff_scene` — 对比两个场景文件的节点差异
 
 ---
 
@@ -176,11 +177,11 @@
   └── 4.1.10~4.1.12 测试（依赖实现）
 
 4.2 高阶 Tools（可与 4.1 并行）
-  ├── 4.2.1~4.2.6 场景增强（依赖现有 Parser/Writer）
-  ├── 4.2.7~4.2.9 资源管理（独立）
-  ├── 4.2.10~4.2.12 项目配置（独立）
-  ├── 4.2.13~4.2.15 搜索查询（可并行）
-  └── 4.2.16~4.2.18 工程管理（依赖 CLI）
+  ├── 4.2.1~4.2.7 场景增强（依赖现有 Parser/Writer）
+  ├── 4.2.8~4.2.10 资源管理（独立）
+  ├── 4.2.11~4.2.13 项目配置（独立）
+  ├── 4.2.14~4.2.16 搜索查询（可并行）
+  └── 4.2.17~4.2.19 工程管理（依赖 CLI）
 
 4.3 CI/CD（可与 4.1/4.2 并行）
   └── 依赖：4.4 测试通过

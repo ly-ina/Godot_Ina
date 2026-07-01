@@ -61,94 +61,28 @@
 
 This project follows a structured 4-phase development plan. Each phase builds upon the previous one, with clear milestones and deliverables.
 
-### Phase 1: Research & Preparation (Week 1)
-
-**Goal**: Complete technical research, set up project skeleton, validate MCP communication.
-
-#### Tasks
-
-- [x] T1.1 Research Godot 4 official documentation (P0·Required)
-  - [x] `.tscn` file format specification
-  - [x] Godot CLI full parameter list
-  - [x] GDScript 2.0 syntax essentials
-- [x] T1.2 Research MCP SDK usage (P0·Required)
-  - [x] `@modelcontextprotocol/sdk` TypeScript SDK
-  - [x] stdio transport implementation
-  - [x] Tool registration and parameter validation
-- [x] T1.3 Initialize project scaffold (P0·Required)
-  - [x] TypeScript + MCP SDK setup
-  - [x] Project structure design
-  - [x] ESLint + Prettier configuration
-- [x] T1.4 Validate MCP communication (P0·Required)
-  - [x] Implement `ping` Tool
-  - [x] Configure AI assistant integration
-  - [x] Verify stdio communication
-
-**Milestone**: ✅ MCP communication validated
-
----
-
-### Phase 2: MVP Core Features (Weeks 2-4) ✅
-
-**Goal**: Implement core read/write capabilities, enable AI to actually manipulate Godot project files.
-
-#### Tasks
-
-- [x] T2.1 Implement `.tscn` parser (P0·Required, 5 days)
-  - [x] Parse `[gd_scene]` root block
-  - [x] Parse `[ext_resource]` references
-  - [x] Parse `[sub_resource]` blocks
-  - [x] Parse `[node]` definitions (properties, children)
-  - [x] Parse `[connection]` signal connections
-  - [x] Support all property types (Vector2/3/4, Color, Rect2, Array, Dictionary, etc.)
-- [x] T2.2 Implement `.tscn` writer (P0·Required, 4 days)
-  - [x] Generate standard `.tscn` text from structured objects
-  - [x] Follow Godot 4 format specification (format=3)
-  - [x] Validate output format
-- [x] T2.3 Implement Phase 1 MCP Tools (P0·Required, 3 days)
-  - [x] `list_scenes` - List all `.tscn` files
-  - [x] `read_scene` - Read and parse scene file
-  - [x] `read_script` - Read `.gd` file content
-- [x] T2.4 Implement Phase 2 MCP Tools (P1·Required, 5 days)
-  - [x] `create_scene` - Create new scene file
-  - [x] `add_node` - Add node to scene
-  - [x] `edit_node` - Edit node properties
-  - [x] `create_script` - Create GDScript file (with optional node attachment)
-
-**Milestone**: ✅ Read/write scene capabilities
-
----
-
-### Phase 3: 实用价值提升（第5-6周） 🚧
+### Phase 3: 实用价值提升 🚧
 
 **目标**：集成 Godot CLI，让 AI 不仅能编辑文件，还能运行和测试项目，形成完整开发闭环。
 
-#### 任务
-
-- [x] T3.1 集成 Godot CLI（P1·必须，4 天）
+#### 已完成
+- [x] T3.1 Godot CLI 集成
   - [x] 自动检测 Godot 可执行文件路径（Windows/macOS/Linux）
-  - [x] 实现 `run_project` Tool
-  - [x] 支持 `--headless` 模式
+  - [x] 实现 `run_project` Tool（normal/headless/debug 模式）
   - [x] 支持 `--script` 执行脚本
   - [x] 捕获 stdout/stderr 输出
-- [ ] T3.2 实现 `execute_gdscript` Tool（P2·可选）
-  - [ ] 写入临时 `.gd` 文件
-  - [ ] 通过 `godot --headless --script` 执行
-  - [ ] 捕获输出并返回
-  - [ ] 清理临时文件
-- [ ] T3.3 实现 `validate_scene` Tool（P2·可选）
-  - [ ] 校验 `.tscn` 文件格式
-  - [ ] 检查节点/资源引用关系
-  - [ ] 返回详细错误信息
-- [ ] T3.4 编写单元测试（P1·必须，4 天）
-  - [x] 测试 `.tscn` 解析器（17 个测试）
-  - [x] 测试 `.tscn` 生成器（round-trip 一致性）
-  - [x] 测试树工具函数
-  - [ ] 测试 Godot CLI 封装（mock Godot 可执行文件）
-  - [ ] 目标：>80% 覆盖率
-- [x] T3.5 编写项目文档（P1·必须，2 天）
-  - [x] README.md — 项目介绍、安装、快速上手
-  - [ ] `docs/` 目录下的详细文档
+- [x] T3.4 单元测试（31 个测试）
+  - [x] 解析器测试（17 个）：header、节点树、ext_resource、值类型解析
+  - [x] 生成器测试（5 个）：格式校验、round-trip 一致性
+  - [x] 树工具测试（9 个）：findNodeInTree、countNodes、flattenNodes
+- [x] T3.5 README 文档（完整中文版）
+
+#### 待完成
+- [ ] T3.2 `execute_gdscript` — 通过 CLI 执行 GDScript 代码片段并返回结果
+- [ ] T3.3 `validate_scene` — 校验 `.tscn` 格式 + 节点/资源引用完整性
+- [ ] T3.4 CLI 封装 mock 测试 — 用 mock Godot 可执行文件测试 CLI 封装层
+- [ ] 测试覆盖率目标 >85%
+- [ ] `docs/` 子目录：安装指南、配置说明、Tools 参考、AI 调用示例
 
 **里程碑**：✅ 项目运行能力
 
