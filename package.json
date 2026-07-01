@@ -1,0 +1,38 @@
+{
+  "name": "godot-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP Server for Godot project files - AI-native infrastructure for Godot development",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "godot-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepare": "npm run build",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "godot",
+    "mcp",
+    "AI",
+    "game-development",
+    "scenetree"
+  ],
+  "author": "ly-ina",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ly-ina/Godot_Ina.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
