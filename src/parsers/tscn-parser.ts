@@ -73,13 +73,6 @@ export class TscnParser {
   }
 
   private parseBlockDeclaration(line: string): void {
-    // Examples:
-    // [gd_scene load_steps=3 format=3 uid="uid://..."]
-    // [ext_resource type="Script" path="res://main.gd" id="1"]
-    // [sub_resource type="StandardMaterial3D" id="2"]
-    // [node name="Player" type="CharacterBody2D" parent="."]
-    // [connection signal="body_entered" from="." to="." method="_on_body_entered"]
-
     if (line.startsWith("[gd_scene")) {
       this.state = ParseState.ROOT;
       this.parseHeader(line);
@@ -102,7 +95,6 @@ export class TscnParser {
   }
 
   private parseHeader(line: string): void {
-    // [gd_scene load_steps=3 format=3 uid="uid://..."]
     const loadStepsMatch = line.match(/load_steps=(\d+)/);
     const formatMatch = line.match(/format=(\d+)/);
     const uidMatch = line.match(/uid="([^"]+)"/);
@@ -119,7 +111,6 @@ export class TscnParser {
   }
 
   private parseExtResource(line: string): void {
-    // [ext_resource type="Script" path="res://main.gd" id="1"]
     const typeMatch = line.match(/type="([^"]+)"/);
     const pathMatch = line.match(/path="([^"]+)"/);
     const idMatch = line.match(/id="([^"]+)"/);
@@ -134,7 +125,6 @@ export class TscnParser {
   }
 
   private parseSubResource(line: string): void {
-    // [sub_resource type="StandardMaterial3D" id="2"]
     const typeMatch = line.match(/type="([^"]+)"/);
     const idMatch = line.match(/id="([^"]+)"/);
 
@@ -149,17 +139,23 @@ export class TscnParser {
 
   private parseNode(line: string): void {
     // [node name="Player" type="CharacterBody2D" parent="."]
-    const nameMatch = line.match(/name="([^"]+)"/);
-    const typeMatch = line.match(/type="([^"]+)"/);
-    let parentMatch = line.match(/parent="([^"]+)"/);
-    
-    // Handle parent="." (root node)
+    const nameMatch = line.match(/name="([^"]*)"/);
+    const typeMatch = line.match(/type="([^"]*)"/);
+    const parentMatch = line.match(/parent="([^"]*)"/);
+
+    // Handle parent
+    // In Godot .tscn format:
+    // - no parent field = root node
+    // - parent="." = parent is root node
+    // - parent="NodeName" = parent is named node
     let parent: string | null = null;
     if (parentMatch) {
-      if (parentMatch[1] === ".") {
-        parent = null; // Root node
+      const parentValue = parentMatch[1];
+      if (parentValue === ".") {
+        // Will be resolved later in buildNodeTree
+        parent = ".";
       } else {
-        parent = parentMatch[1];
+        parent = parentValue;
       }
     }
 
@@ -175,7 +171,6 @@ export class TscnParser {
   }
 
   private parseConnection(line: string): void {
-    // [connection signal="body_entered" from="." to="." method="_on_body_entered" flags=0]
     const signalMatch = line.match(/signal="([^"]+)"/);
     const fromMatch = line.match(/from="([^"]+)"/);
     const toMatch = line.match(/to="([^"]+)"/);
@@ -204,10 +199,25 @@ export class TscnParser {
       return null;
     }
 
-    // Find root node (parent is null or ".")
-    const rootNode = this.nodes.find(n => n.parent === null || n.parent === ".");
-    if (!rootNode) {
-      return this.nodes[0]; // Fallback
+    // Find root node(s)
+    // In Godot .tscn format:
+    // - no parent field = root node
+    // - parent="." = root node
+    const rootNodes = this.nodes.filter(n => n.parent === null || n.parent === ".");
+
+    if (rootNodes.length === 0) {
+      // No root node found, use first node
+      return this.nodes[0];
+    }
+
+    // Use first root node
+    const rootNode = rootNodes[0];
+
+    // Resolve parent="." to root node name
+    for (const node of this.nodes) {
+      if (node.parent === ".") {
+        node.parent = rootNode.name;
+      }
     }
 
     // Build tree
