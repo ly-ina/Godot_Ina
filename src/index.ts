@@ -8,6 +8,7 @@ import {
 import { z } from "zod";
 import { listScenes } from "./tools/list_scenes.js";
 import { readScene } from "./tools/read_scene.js";
+import { createScene } from "./tools/create_scene.js";
 
 // Create MCP server instance
 const server = new Server(
@@ -61,6 +62,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["scene_path"],
+        },
+      },
+      {
+        name: "create_scene",
+        description: "Create a new .tscn scene file with specified root node",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scene_path: {
+              type: "string",
+              description: "Path to save the new .tscn scene file",
+            },
+            root_node_name: {
+              type: "string",
+              description: "Name of the root node (e.g., 'World', 'Main', 'Player')",
+            },
+            root_node_type: {
+              type: "string",
+              description: "Type of the root node (e.g., 'Node2D', 'Node3D', 'CharacterBody2D')",
+            },
+            project_path: {
+              type: "string",
+              description: "Godot project root path (optional, defaults to current directory)",
+            },
+          },
+          required: ["scene_path", "root_node_name", "root_node_type"],
         },
       },
     ],
@@ -137,6 +164,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             type: "text",
             text: responseText,
+          },
+        ],
+      };
+    }
+
+    if (name === "create_scene") {
+      const scenePath = args?.scene_path as string;
+      const rootNodeName = args?.root_node_name as string;
+      const rootNodeType = args?.root_node_type as string;
+      const projectPath = args?.project_path as string | undefined;
+
+      if (!scenePath || !rootNodeName || !rootNodeType) {
+        throw new Error("Missing required parameters: scene_path, root_node_name, root_node_type");
+      }
+
+      const result = createScene({
+        scene_path: scenePath,
+        root_node_name: rootNodeName,
+        root_node_type: rootNodeType,
+        project_path: projectPath,
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: result,
           },
         ],
       };

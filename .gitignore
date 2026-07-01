@@ -23,3 +23,19 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+# Test fixtures (generated during testing)
+test-fixtures/scenes/TestScene*.tscn
+
+# Windows reserved device names (causes Git errors)
+NUL
+CON
+PRN
+AUX
+COM1
+COM2
+COM3
+COM4
+LPT1
+LPT2
+LPT3
