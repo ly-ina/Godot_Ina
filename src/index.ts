@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { listScenes } from "./tools/list_scenes.js";
+import { readScene } from "./tools/read_scene.js";
 
 // Create MCP server instance
 const server = new Server(
@@ -48,6 +49,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: [],
         },
       },
+      {
+        name: "read_scene",
+        description: "Read and parse a .tscn scene file",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scene_path: {
+              type: "string",
+              description: "Path to the .tscn scene file to read",
+            },
+          },
+          required: ["scene_path"],
+        },
+      },
     ],
   };
 });
@@ -78,6 +93,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const responseText = `Found ${scenes.length} scene(s) in project:\n\n` +
         scenes.map((scene, index) => 
           `${index + 1}. ${scene.path}\n   Size: ${scene.size} bytes\n   Modified: ${scene.modified}\n`
+        ).join("\n");
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: responseText,
+          },
+        ],
+      };
+    }
+
+    if (name === "read_scene") {
+      const scenePath = args?.scene_path as string;
+      
+      if (!scenePath) {
+        throw new Error("Missing required parameter: scene_path");
+      }
+      
+      // Call the actual implementation
+      const result = readScene(scenePath);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to read scene");
+      }
+      
+      // Format response
+      const scene = result.scene!;
+      const responseText = `Scene: ${scenePath}\n\n` +
+        `Format: ${scene.header.format}\n` +
+        `Load Steps: ${scene.header.loadSteps}\n` +
+        `Node Count: ${scene.nodeCount}\n` +
+        `Root Node: ${scene.rootNode || "(none)"}\n\n` +
+        `Nodes:\n` +
+        scene.nodes.map((node, index) => 
+          `${index + 1}. ${node.name} (${node.type})` +
+          (node.parent ? ` - parent: ${node.parent}` : "")
         ).join("\n");
       
       return {
