@@ -6,6 +6,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { listScenes } from "./tools/list_scenes.js";
 
 // Create MCP server instance
 const server = new Server(
@@ -70,13 +71,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "list_scenes") {
       const projectPath = (args?.project_path as string) || process.cwd();
       
-      // TODO: Implement actual scene listing logic
-      // For now, return a placeholder response
+      // Call the actual implementation
+      const scenes = listScenes(projectPath);
+      
+      // Format response
+      const responseText = `Found ${scenes.length} scene(s) in project:\n\n` +
+        scenes.map((scene, index) => 
+          `${index + 1}. ${scene.path}\n   Size: ${scene.size} bytes\n   Modified: ${scene.modified}\n`
+        ).join("\n");
+      
       return {
         content: [
           {
             type: "text",
-            text: `Project path: ${projectPath}\nScene listing not yet implemented - this is a demo response.`,
+            text: responseText,
           },
         ],
       };
