@@ -8,6 +8,10 @@ import {
 import { listScenes } from "./tools/list_scenes.js";
 import { readScene } from "./tools/read_scene.js";
 import { createScene } from "./tools/create_scene.js";
+import { readScript } from "./tools/read_script.js";
+import { addNode } from "./tools/add_node.js";
+import { editNode } from "./tools/edit_node.js";
+import { createScript } from "./tools/create_script.js";
 
 // Create MCP server instance
 const server = new Server(
@@ -87,6 +91,100 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["scene_path", "root_node_name", "root_node_type"],
+        },
+      },
+      {
+        name: "read_script",
+        description: "Read a .gd GDScript file and return its content",
+        inputSchema: {
+          type: "object",
+          properties: {
+            script_path: {
+              type: "string",
+              description: "Path to the .gd script file to read",
+            },
+          },
+          required: ["script_path"],
+        },
+      },
+      {
+        name: "add_node",
+        description: "Add a new node to an existing .tscn scene",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scene_path: {
+              type: "string",
+              description: "Path to the .tscn scene file",
+            },
+            parent_node_name: {
+              type: "string",
+              description: "Name of the parent node (use '.' for root level)",
+            },
+            node_type: {
+              type: "string",
+              description: "Type of the new node (e.g., 'Sprite2D', 'CharacterBody2D', 'Camera2D')",
+            },
+            node_name: {
+              type: "string",
+              description: "Name for the new node (must be unique in the scene)",
+            },
+            properties: {
+              type: "object",
+              description: "Optional initial properties for the new node (key-value pairs)",
+              additionalProperties: true,
+            },
+          },
+          required: ["scene_path", "parent_node_name", "node_type", "node_name"],
+        },
+      },
+      {
+        name: "edit_node",
+        description: "Modify properties of a node in a .tscn scene",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scene_path: {
+              type: "string",
+              description: "Path to the .tscn scene file",
+            },
+            node_name: {
+              type: "string",
+              description: "Name of the node to edit",
+            },
+            properties: {
+              type: "object",
+              description: "Properties to update. Set a property to null to remove it.",
+              additionalProperties: true,
+            },
+          },
+          required: ["scene_path", "node_name", "properties"],
+        },
+      },
+      {
+        name: "create_script",
+        description: "Create a new .gd GDScript file, optionally attaching it to a scene node",
+        inputSchema: {
+          type: "object",
+          properties: {
+            script_path: {
+              type: "string",
+              description: "Path to save the .gd script file",
+            },
+            content: {
+              type: "string",
+              description: "GDScript code content to write",
+            },
+            scene_path: {
+              type: "string",
+              description: "Optional: Path to .tscn scene to attach the script",
+            },
+            node_name: {
+              type: "string",
+              description: "Optional: Name of the node to attach the script (requires scene_path)",
+            },
+          },
+          required: ["script_path", "content"],
         },
       },
     ],
@@ -192,6 +290,80 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: result,
           },
         ],
+      };
+    }
+
+    if (name === "read_script") {
+      const scriptPath = args?.script_path as string;
+      if (!scriptPath) {
+        throw new Error("Missing required parameter: script_path");
+      }
+      const result = readScript({ script_path: scriptPath });
+      return {
+        content: [{ type: "text", text: result }],
+      };
+    }
+
+    if (name === "add_node") {
+      const scenePath = args?.scene_path as string;
+      const parentName = args?.parent_node_name as string;
+      const nodeType = args?.node_type as string;
+      const nodeName = args?.node_name as string;
+      const properties = args?.properties as Record<string, unknown> | undefined;
+
+      if (!scenePath || !parentName || !nodeType || !nodeName) {
+        throw new Error("Missing required parameters: scene_path, parent_node_name, node_type, node_name");
+      }
+
+      const result = addNode({
+        scene_path: scenePath,
+        parent_node_name: parentName,
+        node_type: nodeType,
+        node_name: nodeName,
+        properties,
+      });
+      return {
+        content: [{ type: "text", text: result }],
+      };
+    }
+
+    if (name === "edit_node") {
+      const scenePath = args?.scene_path as string;
+      const nodeName = args?.node_name as string;
+      const properties = args?.properties as Record<string, unknown>;
+
+      if (!scenePath || !nodeName || !properties) {
+        throw new Error("Missing required parameters: scene_path, node_name, properties");
+      }
+
+      const result = editNode({
+        scene_path: scenePath,
+        node_name: nodeName,
+        properties,
+      });
+      return {
+        content: [{ type: "text", text: result }],
+      };
+    }
+
+    if (name === "create_script") {
+      const scriptPath = args?.script_path as string;
+      const content = args?.content as string;
+      const scenePath = args?.scene_path as string | undefined;
+      const nodeName = args?.node_name as string | undefined;
+
+      if (!scriptPath || !content) {
+        throw new Error("Missing required parameters: script_path, content");
+      }
+
+      const result = createScript({
+        script_path: scriptPath,
+        content,
+        scene_path: scenePath,
+        node_name: nodeName,
+      });
+      return {
+        content: [{ type: "text", text: result }],
       };
     }
 
