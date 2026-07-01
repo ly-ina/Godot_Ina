@@ -4,66 +4,65 @@
 [![npm version](https://img.shields.io/npm/v/godot-mcp-server.svg)](https://www.npmjs.com/package/godot-mcp-server)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/ly-ina/Godot_Ina/ci.yml)](https://github.com/ly-ina/Godot_Ina/actions)
 
-MCP Server for Godot project files - AI-native infrastructure for Godot development.
+让 AI 助手直接读写 Godot 项目文件的 MCP Server — Godot 开发的 AI 原生基础设施。
 
-让 AI 助手直接读写 Godot 项目文件的 MCP Server，成为 Godot 开发的 AI 原生基础设施。
+## 📋 目录
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Development Plan](#development-plan)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [简介](#简介)
+- [能力概览](#能力概览)
+- [开发计划](#开发计划)
+- [安装](#安装)
+- [使用](#使用)
+- [开发](#开发)
+- [贡献](#贡献)
+- [许可](#许可)
 
 ---
 
-## Overview
+## 简介
 
-`godot-mcp-server` is a Model Context Protocol (MCP) server that enables AI assistants to directly read and write Godot project files. It serves as the bridge between AI and Godot, allowing AI to:
+`godot-mcp-server` 是一个基于 Model Context Protocol (MCP) 的服务器，让 AI 助手可以直接读写 Godot 项目文件。它是连接 AI 与 Godot 的桥梁，使 AI 能够：
 
-- Read and parse `.tscn` scene files
-- Create and modify Godot scenes programmatically
-- Manage GDScript files
-- Execute Godot CLI commands
-- Build "living world" simulations with AI assistance
+- 读取和解析 `.tscn` 场景文件
+- 创建和修改 Godot 场景
+- 管理 GDScript 文件
+- 通过 Godot CLI 运行项目
+- 辅助构建"活的小说世界模拟器"
 
-### Why This Project?
+### 为什么要做这个项目？
 
-1. **AI-Native Game Development**: Traditional game development requires manual editing in Godot editor. This MCP server allows AI to directly manipulate Godot project files, enabling AI-assisted game development at scale.
+1. **AI 原生游戏开发**：传统游戏开发需要在 Godot 编辑器中手动操作。MCP Server 让 AI 直接操作 Godot 项目文件，实现 AI 辅助的高效开发。
 
-2. **Living Novel World Simulator**: The long-term goal is to create a game similar to Stardew Valley, where the world is generated from structured world-building data (JSON/YAML) from the novel "Night Orchid" (夜罗兰). AI can help build and iterate on this world dynamically.
+2. **活的小说世界模拟器**：远期目标是将《夜罗兰》小说的结构化世界观数据（JSON/YAML）转化为类似《星露谷物语》的可交互游戏世界，AI 辅助动态构建和迭代。
 
-3. **Universal Developer Tool**: This is not just for one game - any Godot developer can use this tool to boost their development efficiency.
+3. **通用开发者工具**：不只为单一项目服务，任何 Godot 开发者都可以使用这个工具提升开发效率。
 
 ---
 
-## Features
+## 能力概览
 
-### Current Status (MVP Complete - Phase 1 & 2 ✅)
+### 当前状态（MVP 完成 ✅）
 
-| Tool | Status | Description |
-|------|--------|-------------|
-| `ping` | ✅ | Test connectivity — returns "pong" |
-| `list_scenes` | ✅ | List all `.tscn` files in a project (recursive scanning) |
-| `read_scene` | ✅ | Read and parse a `.tscn` scene file (full node tree + properties) |
-| `create_scene` | ✅ | Create a new `.tscn` scene with specified root node |
-| `read_script` | ✅ | Read a `.gd` GDScript file |
-| `add_node` | ✅ | Add a new node to an existing scene (parse → modify → write) |
-| `edit_node` | ✅ | Edit node properties (add / update / remove) |
-| `create_script` | ✅ | Create a `.gd` script file, optionally attach to a scene node |
-| `run_project` | 🚧 | Run Godot project via CLI — in development |
+| Tool | 状态 | 功能 |
+|------|------|------|
+| `ping` | ✅ | 测试连通性 — 返回 "pong" |
+| `list_scenes` | ✅ | 列出项目所有 `.tscn` 场景文件（递归扫描） |
+| `read_scene` | ✅ | 读取并解析 `.tscn` 场景文件（完整节点树 + 属性） |
+| `create_scene` | ✅ | 创建新场景文件，指定根节点类型 |
+| `read_script` | ✅ | 读取 `.gd` GDScript 文件 |
+| `add_node` | ✅ | 向已有场景添加节点（读取→修改→写入） |
+| `edit_node` | ✅ | 编辑节点属性（新增/更新/删除） |
+| `create_script` | ✅ | 创建 `.gd` 脚本文件，可选绑定到场景节点 |
+| `run_project` | ✅ | 通过 Godot CLI 运行项目（检测 Godot 可执行文件路径） |
 
-### Core Capabilities
+### 核心能力
 
-- **Scene manipulation**: Create, read, modify, and write `.tscn` files
-- **Script management**: Read, create, and attach GDScript files to nodes
-- **Full round-trip**: Parse → modify in memory → write back to valid `.tscn` format
-- **Property parsing**: Supports strings, numbers, booleans, Vector2/3/4, Color, arrays, dictionaries
-- **Error resilience**: Graceful error handling with actionable messages
+- **场景编辑**：创建、读取、修改、写入 `.tscn` 文件，完整读写闭环
+- **脚本管理**：读取和创建 GDScript 文件，支持绑定到场景节点
+- **完整 Round-trip**：解析 → 内存修改 → 写回有效 `.tscn` 格式
+- **属性解析**：支持字符串、数字、布尔、Vector2/3/4、Color、数组、字典等类型
+- **错误处理**：优雅的错误返回，带可操作性的错误信息
+- **Godot CLI 集成**：自动检测 Godot 可执行文件，支持 normal/headless/debug 模式
 
 ---
 
@@ -129,77 +128,73 @@ This project follows a structured 4-phase development plan. Each phase builds up
 
 ---
 
-### Phase 3: Practical Value Enhancement (Weeks 5-6)
+### Phase 3: 实用价值提升（第5-6周） 🚧
 
-**Goal**: Integrate Godot CLI, enable AI to not only edit files but also run and test projects, forming a complete development loop.
+**目标**：集成 Godot CLI，让 AI 不仅能编辑文件，还能运行和测试项目，形成完整开发闭环。
 
-#### Tasks
+#### 任务
 
-- [ ] T3.1 Integrate Godot CLI (P1·Required, 4 days)
-  - [ ] Auto-detect Godot executable path (Windows/macOS/Linux)
-  - [ ] Implement `run_project` Tool
-  - [ ] Support `--headless` mode
-  - [ ] Support `--script` execution
-  - [ ] Capture stdout/stderr
-- [ ] T3.2 Implement `execute_gdscript` Tool (P2·Optional)
-  - [ ] Write temporary `.gd` file
-  - [ ] Execute via `godot --headless --script`
-  - [ ] Capture output and return to caller
-  - [ ] Clean up temporary files
-- [ ] T3.3 Implement `validate_scene` Tool (P2·Optional)
-  - [ ] Validate `.tscn` file format
-  - [ ] Check node/resource references
-  - [ ] Return detailed error messages
-- [ ] T3.4 Write unit tests (P1·Required, 4 days)
-  - [ ] Test `.tscn` parser (all node types, all property formats)
-  - [ ] Test `.tscn` writer (parse → write → parse consistency)
-  - [ ] Test MCP Tools (mock AI calls)
-  - [ ] Test Godot CLI wrapper (mock Godot executable)
-  - [ ] Target: >80% coverage
-- [ ] T3.5 Write project documentation (P1·Required, 2 days)
-  - [ ] `README.md` - Project introduction, installation, quick start
-  - [ ] `docs/installation.md` - Detailed installation guide
-  - [ ] `docs/configuration.md` - Configuration explanation
-  - [ ] `docs/tools-reference.md` - Each Tool's detailed parameters and examples
-  - [ ] `docs/ai-usage-examples.md` - AI assistant call examples
-  - [ ] `CONTRIBUTING.md` - Contribution guidelines
+- [x] T3.1 集成 Godot CLI（P1·必须，4 天）
+  - [x] 自动检测 Godot 可执行文件路径（Windows/macOS/Linux）
+  - [x] 实现 `run_project` Tool
+  - [x] 支持 `--headless` 模式
+  - [x] 支持 `--script` 执行脚本
+  - [x] 捕获 stdout/stderr 输出
+- [ ] T3.2 实现 `execute_gdscript` Tool（P2·可选）
+  - [ ] 写入临时 `.gd` 文件
+  - [ ] 通过 `godot --headless --script` 执行
+  - [ ] 捕获输出并返回
+  - [ ] 清理临时文件
+- [ ] T3.3 实现 `validate_scene` Tool（P2·可选）
+  - [ ] 校验 `.tscn` 文件格式
+  - [ ] 检查节点/资源引用关系
+  - [ ] 返回详细错误信息
+- [ ] T3.4 编写单元测试（P1·必须，4 天）
+  - [x] 测试 `.tscn` 解析器（17 个测试）
+  - [x] 测试 `.tscn` 生成器（round-trip 一致性）
+  - [x] 测试树工具函数
+  - [ ] 测试 Godot CLI 封装（mock Godot 可执行文件）
+  - [ ] 目标：>80% 覆盖率
+- [x] T3.5 编写项目文档（P1·必须，2 天）
+  - [x] README.md — 项目介绍、安装、快速上手
+  - [ ] `docs/` 目录下的详细文档
 
-**Milestone**: ✅ Project execution capability
+**里程碑**：✅ 项目运行能力
 
 ---
 
-### Phase 4: Version Compatibility & Ecosystem (Week 7+)
+### Phase 4: 版本兼容与生态（第7周+） 📅
 
-**Goal**: Support more Godot versions, improve ecosystem, release official version.
+**目标**：支持更多 Godot 版本，完善生态，发布正式版本。
 
-#### Tasks
+#### 任务
 
-- [ ] T4.1 Adapt Godot 3.x (P2·Important, 7 days)
-  - [ ] Implement `src/adapters/v3/` adapter layer
-  - [ ] Handle `.tscn` format version differences (format=2/3 vs format=3)
-  - [ ] Handle node type name differences (e.g., `KinematicBody2D` → `CharacterBody2D`)
-  - [ ] Handle GDScript 1.0 syntax differences
-  - [ ] Handle CLI parameter differences
-  - [ ] Auto-detect version and select adapter
-- [ ] T4.2 Implement advanced Tools (P3·Optional)
-  - [ ] `manage_resources` - Manage project resources (import/delete)
-  - [ ] `edit_project_settings` - Modify `project.godot` config file
-  - [ ] `list_nodes` - Return scene node tree only (lightweight)
-  - [ ] `search_nodes` - Search nodes by type/name in scene
-  - [ ] `duplicate_scene` - Duplicate scene file
-  - [ ] `delete_node` - Delete node from scene
-- [ ] T4.3 Set up CI/CD (P2·Optional, 2 days)
-  - [ ] `ci.yml` - Run tests + lint on every PR
-  - [ ] `release.yml` - Auto-publish to npm + create GitHub Release on tag
-  - [ ] `test-compatibility.yml` - Periodic Godot version compatibility tests
-- [ ] T4.4 Release v1.0 (P2·Important, 3 days)
-  - [ ] Determine package name (check npm availability)
-  - [ ] Finalize `package.json` (description, keywords, repository, license)
-  - [ ] `npm publish` - Publish to npm
-  - [ ] Create GitHub Release with changelog
-  - [ ] Write announcement (Reddit r/godot, Twitter, Zhihu, etc.)
+- [ ] T4.1 适配 Godot 3.x（P2·重要，7 天）
+  - [ ] 实现 `src/adapters/v3/` 适配层
+  - [ ] 处理 `.tscn` 格式版本差异（format=2/3 vs format=3）
+  - [ ] 处理节点类型名称差异（如 `KinematicBody2D` → `CharacterBody2D`）
+  - [ ] 处理 GDScript 1.0 语法差异
+  - [ ] 处理 CLI 参数差异
+  - [ ] 自动检测版本并选择对应适配器
+- [ ] T4.2 实现高阶 Tools（P3·可选）
+  - [ ] `manage_resources` - 管理项目资源文件（导入/删除）
+  - [ ] `edit_project_settings` - 修改 `project.godot` 配置
+  - [ ] `list_nodes` - 仅返回场景节点树（轻量版）
+  - [ ] `search_nodes` - 按类型/名称搜索节点
+  - [ ] `duplicate_scene` - 复制场景文件
+  - [ ] `delete_node` - 从场景中删除节点
+- [ ] T4.3 搭建 CI/CD（P2·可选，2 天）
+  - [ ] `ci.yml` - PR 时自动运行测试 + lint
+  - [ ] `release.yml` - 打标签时自动发布到 npm + 创建 GitHub Release
+  - [ ] `test-compatibility.yml` - 定期 Godot 版本兼容性测试
+- [ ] T4.4 发布 v1.0（P2·重要，3 天）
+  - [ ] 确定包名（检查 npm 可用性）
+  - [ ] 最终确定 `package.json`
+  - [ ] `npm publish` - 发布到 npm
+  - [ ] 创建 GitHub Release（含 changelog）
+  - [ ] 发布通告（Reddit r/godot、Twitter、知乎等）
 
-**Milestone**: ✅ v1.0 released to npm
+**里程碑**：✅ v1.0 发布到 npm
 
 ---
 
@@ -315,65 +310,65 @@ MCP Tool error return format:
 
 ---
 
-## Installation
+## 安装
 
-### From npm (when v1.0 is released)
+### 从 npm（v1.0 发布后）
 
 ```bash
 npm install -g godot-mcp-server
 ```
 
-### From Source (Current)
+### 从源码（当前）
 
 ```bash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/ly-ina/Godot_Ina.git
 cd Godot_Ina
 
-# Install dependencies
+# 安装依赖
 npm install
 
-# Build
+# 构建
 npm run build
 
-# Run dev mode
+# 开发模式运行（自动重编译）
 npm run dev
 ```
 
 ---
 
-## Usage
+## 使用
 
-Configure your AI assistant (Claude Desktop, WorkBuddy, etc.) to use this MCP server.
+在 AI 助手（Claude Desktop、WorkBuddy 等）中配置使用此 MCP 服务器。
 
-### With Claude Desktop
+### Claude Desktop
 
-Add to your `claude_desktop_config.json`:
+在 `claude_desktop_config.json` 中添加：
 
 ```json
 {
   "mcpServers": {
     "godot": {
       "command": "node",
-      "args": ["/path/to/godot-mcp-server/dist/index.js"]
+      "args": ["/your/path/to/godot-mcp-server/dist/index.js"]
     }
   }
 }
 ```
 
-### With WorkBuddy
+### WorkBuddy
 
-Configure in the MCP settings panel by adding the server path.
+在 MCP 设置面板中添加服务器路径即可。
 
-### Available Tools
+### 可用工具
 
 #### `ping`
 
-Test connectivity - returns "pong".
+测试连通性 — 返回 "pong"。
 
-**Parameters**: None
+**参数**：无
 
-**Example**:
+**示例**：
 
 ```json
 {
@@ -384,21 +379,21 @@ Test connectivity - returns "pong".
 
 #### `list_scenes`
 
-List all `.tscn` scene files in a Godot project.
+列出 Godot 项目中所有 `.tscn` 场景文件。
 
-**Parameters**:
+**参数**：
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `project_path` | string | No | Path to Godot project root (defaults to current directory) |
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `project_path` | string | 否 | Godot 项目根路径（默认为当前目录） |
 
-**Example**:
+**示例**：
 
 ```json
 {
   "tool": "list_scenes",
   "arguments": {
-    "project_path": "/path/to/godot/project"
+    "project_path": "C:/MyGame"
   }
 }
 ```
@@ -588,183 +583,162 @@ Run Godot project using Godot CLI.
 
 ## Development
 
-### Prerequisites
+### 前置条件
 
 - Node.js 18+
-- npm or yarn
+- npm 或 yarn
 - TypeScript 5.0+
-- Godot 4.x (for testing)
+- Godot 4.x（用于测试）
 
-### Setup
+### 环境设置
 
 ```bash
-# Install dependencies
+# 安装依赖
 npm install
 
-# Build
+# 构建
 npm run build
 
-# Run in dev mode (auto-rebuild on changes)
+# 开发模式（自动重编译）
 npm run dev
 
-# Run tests
+# 运行测试
 npm test
 
-# Lint
-npm run lint
-
-# Format code
-npm run format
+# 持续运行测试（watch 模式）
+npm run test:watch
 ```
 
-### Testing MCP Communication
+### 测试 MCP 通信
 
 ```bash
-# Test tools/list
+# 测试 tools/list
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 
-# Expected output:
+# 预期输出（格式化后）：
 # {"result":{"tools":[...],"jsonrpc":"2.0","id":1}}
 ```
 
-### Contributing
+---
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+## 路线图
 
-#### Development Workflow
+详细计划见 [开发计划](#开发计划)。
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### 短期（v1.0 ✅）
 
-#### Coding Standards
+- [x] MCP Server 基础框架
+- [x] 9 个 Tools（场景读写、脚本管理、项目运行）
+- [x] `.tscn` 解析器 + 生成器 + 属性解析
+- [x] Godot CLI 集成
+- [x] 31 个单元测试
+- [x] 完整中文文档
+- [ ] 发布 v1.0 到 npm
 
-- Use TypeScript strict mode
-- Follow ESLint + Prettier configuration
-- Write unit tests for new features
-- Update documentation for API changes
+### 中期（v1.1-v2.0）
+
+- [ ] Godot 3.x 兼容
+- [ ] 高阶 Tools（资源管理、项目配置编辑器）
+- [ ] CI/CD 搭建
+- [ ] 性能优化
+
+### 长期（v3.0+）
+
+- [ ] AI 助手中的可视化场景编辑器
+- [ ] 实时场景预览
+- [ ] 多项目支持
+- [ ] 自定义 Tools 插件系统
 
 ---
 
-## Roadmap
+## 常见问题
 
-See [Development Plan](#development-plan) for detailed roadmap.
+### Q: 支持 Godot 3.x 吗？
 
-### Short-term (v1.0)
+A: 目前仅支持 Godot 4.x。Godot 3.x 支持计划在阶段四完成（参见 [T4.1](#t41-适配-godot-3xp2重要7-天)）。
 
-- [x] Basic MCP Server framework
-- [x] `ping` and `list_scenes` Tools
-- [ ] Complete `.tscn` parser and writer
-- [ ] Read/write scene Tools
-- [ ] Godot CLI integration
-- [ ] Unit tests and documentation
+### Q: 任何 AI 助手都能用吗？
 
-### Medium-term (v1.1-v2.0)
+A: 是的，只要 AI 助手支持 MCP 协议（Claude Desktop、WorkBuddy 等）。
 
-- [ ] Godot 3.x compatibility
-- [ ] Advanced Tools (resource management, project settings editor)
-- [ ] CI/CD setup
-- [ ] Performance optimization
+### Q: 用在真实项目里安全吗？
 
-### Long-term (v3.0+)
+A: 服务器有安全检查机制（路径校验、自动备份、参数验证），但建议先在项目副本上测试。
 
-- [ ] Visual scene editor in AI assistant
-- [ ] Real-time scene preview
-- [ ] Multi-project support
-- [ ] Plugin system for custom Tools
+### Q: 和《夜罗兰》小说的关系？
+
+A: 这个 MCP Server 是面向所有 Godot 开发者的通用工具。远期目标是用它来构建基于《夜罗兰》世界观的"活的小说世界模拟器"游戏。但工具本身不绑定任何特定项目。
 
 ---
 
-## Troubleshooting
+## 故障排除
 
-### MCP Server not connecting
+### MCP Server 无法连接
 
-- Verify Node.js version (requires 18+)
-- Check that the server path in your AI assistant config is correct
-- Run `npm run build` to ensure the project is compiled
+- 检查 Node.js 版本（需要 18+）
+- 检查 AI 助手中的服务器路径配置是否正确
+- 运行 `npm run build` 确保项目已编译
 
-### `.tscn` file parsing errors
+### `.tscn` 文件解析错误
 
-- Ensure the file is in Godot 4.x format (format=3)
-- Check for syntax errors in the `.tscn` file
-- Enable debug logging: `DEBUG=godot-mcp:* npm run dev`
+- 确保文件是 Godot 4.x 格式（format=3）
+- 检查 `.tscn` 文件是否有语法错误
+- 启用调试日志：`DEBUG=godot-mcp:* npm run dev`
 
-### Godot CLI not found
+### Godot CLI 未找到
 
-- Verify Godot is installed and in PATH
-- Set `GODOT_PATH` environment variable to Godot executable path
-- On Windows, check `%LOCALAPPDATA%/Godot/` for Godot installation
-
----
-
-## FAQ
-
-### Q: Does this work with Godot 3.x?
-
-A: Currently only Godot 4.x is supported. Godot 3.x support is planned for Phase 4 (see [T4.1](#t41-adapt-godot-3x-p2important-7-days)).
-
-### Q: Can I use this with any AI assistant?
-
-A: Yes, as long as the AI assistant supports MCP protocol (Claude Desktop, WorkBuddy, etc.).
-
-### Q: Is this safe to use with my Godot projects?
-
-A: The server includes safety mechanisms (path whitelist, auto-backup, parameter validation), but it's recommended to test on a copy of your project first.
-
-### Q: How does this relate to the "Night Orchid" (夜罗兰) novel?
-
-A: This MCP server is a generic tool for all Godot developers. The long-term goal is to use it to build a "living novel world simulator" game based on the "Night Orchid" novel's world-building data. But the tool itself is not tied to any specific project.
+- 确认 Godot 已安装并配置了系统 PATH
+- 设置 `GODOT_PATH` 环境变量指向 Godot 可执行文件
+- Windows 上检查 `%LOCALAPPDATA%/Godot/` 目录
 
 ---
 
-## Contributing
+## 贡献
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+欢迎贡献！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解行为准则和提交 PR 的流程。
 
-Ways to contribute:
+贡献方式：
 
-- Report bugs
-- Suggest new features
-- Submit pull requests
-- Improve documentation
-- Write tests
-- Create example projects
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- 报告 bug
+- 建议新功能
+- 提交 Pull Request
+- 改进文档
+- 编写测试
+- 创建示例项目
 
 ---
 
-## Author
+## 许可
+
+本项目采用 MIT 协议开源 — 详见 [LICENSE](LICENSE) 文件。
+
+---
+
+## 作者
 
 **ly-ina**
 
 - GitHub: [@ly-ina](https://github.com/ly-ina)
-- Repository: [https://github.com/ly-ina/Godot_Ina](https://github.com/ly-ina/Godot_Ina)
+- 仓库: [https://github.com/ly-ina/Godot_Ina](https://github.com/ly-ina/Godot_Ina)
 
 ---
 
-## Acknowledgments
+## 致谢
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) - For the MCP specification
-- [Godot Engine](https://godotengine.org/) - For the amazing game engine
-- All contributors who help improve this project
+- [Model Context Protocol](https://modelcontextprotocol.io/) — MCP 协议规范
+- [Godot Engine](https://godotengine.org/) — 优秀的开源游戏引擎
+- 所有为这个项目做出贡献的开发者
 
 ---
 
 ## Star History
 
-If you find this project useful, please consider giving it a star on GitHub!
+如果你觉得这个项目有用，欢迎在 GitHub 上点个 Star！
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ly-ina/Godot_Ina&type=Date)](https://star-history.com/#ly-ina/Godot_Ina&Date)
 
 ---
 
-**Last Updated**: 2026-07-01
+**最后更新**：2026-07-02
 
-**Version**: 0.1.0 (MVP - Phase 1)
+**版本**：0.1.0
