@@ -43,28 +43,27 @@ MCP Server for Godot project files - AI-native infrastructure for Godot developm
 
 ## Features
 
-### Current Status (MVP - Phase 1-2)
+### Current Status (MVP Complete - Phase 1 & 2 ✅)
 
-- ✅ Basic MCP Server framework
-- ✅ `ping` - Test connectivity
-- ✅ `list_scenes` - List all `.tscn` files in a project (with directory scanning)
-- ✅ `read_scene` - Read and parse a scene file (basic implementation)
-- 📅 `create_scene` - Create a new scene (planned)
-- 📅 `add_node` - Add a node to a scene (planned)
-- 📅 `edit_node` - Edit node properties (planned)
-- 📅 `run_project` - Run Godot project (planned)
+| Tool | Status | Description |
+|------|--------|-------------|
+| `ping` | ✅ | Test connectivity — returns "pong" |
+| `list_scenes` | ✅ | List all `.tscn` files in a project (recursive scanning) |
+| `read_scene` | ✅ | Read and parse a `.tscn` scene file (full node tree + properties) |
+| `create_scene` | ✅ | Create a new `.tscn` scene with specified root node |
+| `read_script` | ✅ | Read a `.gd` GDScript file |
+| `add_node` | ✅ | Add a new node to an existing scene (parse → modify → write) |
+| `edit_node` | ✅ | Edit node properties (add / update / remove) |
+| `create_script` | ✅ | Create a `.gd` script file, optionally attach to a scene node |
+| `run_project` | 🚧 | Run Godot project via CLI — in development |
 
-**Note**: The `.tscn` parser is implemented but still needs improvement to correctly parse all nodes in complex scenes. Currently, it can parse the file header and root node correctly.
+### Core Capabilities
 
-### Planned Features (Phase 3-4)
-
-- Complete `.tscn` file parser and writer (Godot 4.x format)
-- GDScript file management
-- Godot CLI integration (`--headless` mode support)
-- Godot 3.x compatibility (via adapter pattern)
-- Scene validation tools
-- Resource management tools
-- Project settings editor
+- **Scene manipulation**: Create, read, modify, and write `.tscn` files
+- **Script management**: Read, create, and attach GDScript files to nodes
+- **Full round-trip**: Parse → modify in memory → write back to valid `.tscn` format
+- **Property parsing**: Supports strings, numbers, booleans, Vector2/3/4, Color, arrays, dictionaries
+- **Error resilience**: Graceful error handling with actionable messages
 
 ---
 
@@ -99,32 +98,32 @@ This project follows a structured 4-phase development plan. Each phase builds up
 
 ---
 
-### Phase 2: MVP Core Features (Weeks 2-4)
+### Phase 2: MVP Core Features (Weeks 2-4) ✅
 
 **Goal**: Implement core read/write capabilities, enable AI to actually manipulate Godot project files.
 
 #### Tasks
 
-- [ ] T2.1 Implement `.tscn` parser (P0·Required, 5 days)
-  - [ ] Parse `[gd_scene]` root block
-  - [ ] Parse `[ext_resource]` references
-  - [ ] Parse `[sub_resource]` blocks
-  - [ ] Parse `[node]` definitions (properties, children)
-  - [ ] Parse `[connection]` signal connections
-  - [ ] Support all property types (Vector2/3/4, Color, Rect2, Array, Dictionary, etc.)
-- [ ] T2.2 Implement `.tscn` writer (P0·Required, 4 days)
-  - [ ] Generate standard `.tscn` text from structured objects
-  - [ ] Follow Godot 4 format specification (format=3)
-  - [ ] Validate output format
-- [ ] T2.3 Implement Phase 1 MCP Tools (P0·Required, 3 days)
+- [x] T2.1 Implement `.tscn` parser (P0·Required, 5 days)
+  - [x] Parse `[gd_scene]` root block
+  - [x] Parse `[ext_resource]` references
+  - [x] Parse `[sub_resource]` blocks
+  - [x] Parse `[node]` definitions (properties, children)
+  - [x] Parse `[connection]` signal connections
+  - [x] Support all property types (Vector2/3/4, Color, Rect2, Array, Dictionary, etc.)
+- [x] T2.2 Implement `.tscn` writer (P0·Required, 4 days)
+  - [x] Generate standard `.tscn` text from structured objects
+  - [x] Follow Godot 4 format specification (format=3)
+  - [x] Validate output format
+- [x] T2.3 Implement Phase 1 MCP Tools (P0·Required, 3 days)
   - [x] `list_scenes` - List all `.tscn` files
-  - [ ] `read_scene` - Read and parse scene file
-  - [ ] `read_script` - Read `.gd` file content
-- [ ] T2.4 Implement Phase 2 MCP Tools (P1·Required, 5 days)
-  - [ ] `create_scene` - Create new scene file
-  - [ ] `add_node` - Add node to scene
-  - [ ] `edit_node` - Edit node properties
-  - [ ] `create_script` - Create GDScript file
+  - [x] `read_scene` - Read and parse scene file
+  - [x] `read_script` - Read `.gd` file content
+- [x] T2.4 Implement Phase 2 MCP Tools (P1·Required, 5 days)
+  - [x] `create_scene` - Create new scene file
+  - [x] `add_node` - Add node to scene
+  - [x] `edit_node` - Edit node properties
+  - [x] `create_script` - Create GDScript file (with optional node attachment)
 
 **Milestone**: ✅ Read/write scene capabilities
 
@@ -211,9 +210,9 @@ This project follows a structured 4-phase development plan. Each phase builds up
 | Week 1 | T1.1~T1.4 | ✅ MCP communication validated |
 | Week 2 | T2.1 `.tscn` parser | ✅ Correctly parse Godot 4 scene files |
 | Week 3 | T2.2 `.tscn` writer + T2.3 Phase 1 Tools | ✅ Read scene Tools online |
-| Week 4 | T2.4 Phase 2 Tools | ✅ Write scene Tools online |
-| Week 5 | T3.1 Godot CLI integration + T3.4 Unit tests | ✅ Run project Tool online |
-| Week 6 | T3.5 Documentation + T4.4 Release preparation | ✅ v1.0 published to npm |
+| Week 4 | T2.4 Phase 2 Tools | ✅ Write scene Tools online (8 tools total) |
+| Week 5 | T3.1 Godot CLI integration + T3.4 Unit tests | 🚧 In progress |
+| Week 6 | T3.5 Documentation + T4.4 Release preparation | 📅 Planned |
 
 **Total**: 6 weeks to complete v1.0 usable version
 
@@ -404,9 +403,9 @@ List all `.tscn` scene files in a Godot project.
 }
 ```
 
-#### `read_scene` (Planned)
+#### `read_scene`
 
-Read a scene file and return parsed node tree.
+Read a `.tscn` scene file and return its parsed node tree.
 
 **Parameters**:
 
@@ -414,43 +413,165 @@ Read a scene file and return parsed node tree.
 | --------- | ---- | -------- | ----------- |
 | `scene_path` | string | Yes | Path to `.tscn` file |
 
-#### `create_scene` (Planned)
+**Example**:
 
-Create a new scene file with specified root node type.
+```json
+{
+  "tool": "read_scene",
+  "arguments": {
+    "scene_path": "scenes/Main.tscn"
+  }
+}
+```
+
+**Output**: Header info (format, load_steps, uid), node count, root node, and flat node list with type/parent.
+
+---
+
+#### `create_scene`
+
+Create a new `.tscn` scene file with specified root node.
 
 **Parameters**:
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `scene_path` | string | Yes | Path to new `.tscn` file |
+| `scene_path` | string | Yes | Path to save the new `.tscn` file |
+| `root_node_name` | string | Yes | Name of the root node (e.g., "World") |
 | `root_node_type` | string | Yes | Root node type (e.g., "Node2D", "CharacterBody2D") |
-| `root_node_name` | string | No | Root node name (defaults to type name) |
+| `project_path` | string | No | Godot project root (defaults to current directory) |
 
-#### `add_node` (Planned)
+**Example**:
 
-Add a node to a scene.
+```json
+{
+  "tool": "create_scene",
+  "arguments": {
+    "scene_path": "scenes/Player.tscn",
+    "root_node_name": "Player",
+    "root_node_type": "CharacterBody2D"
+  }
+}
+```
+
+---
+
+#### `read_script`
+
+Read a `.gd` GDScript file and return its content with line count.
+
+**Parameters**:
+
+| Parameter | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `script_path` | string | Yes | Path to `.gd` file |
+
+**Example**:
+
+```json
+{
+  "tool": "read_script",
+  "arguments": {
+    "script_path": "scripts/player.gd"
+  }
+}
+```
+
+---
+
+#### `add_node`
+
+Add a new node to an existing `.tscn` scene. The parent node is found by name.
 
 **Parameters**:
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `scene_path` | string | Yes | Path to `.tscn` file |
-| `parent_node_path` | string | Yes | Parent node path (e.g., "Node2D/Player") |
-| `node_type` | string | Yes | Node type (e.g., "Sprite2D", "CollisionShape2D") |
-| `node_name` | string | Yes | Node name |
-| `properties` | object | No | Node properties to set |
+| `parent_node_name` | string | Yes | Parent node name (use `.` for root level) |
+| `node_type` | string | Yes | Node type (e.g., "Sprite2D", "Camera2D") |
+| `node_name` | string | Yes | Name for the new node (must be unique) |
+| `properties` | object | No | Optional initial properties (key-value pairs) |
 
-#### `edit_node` (Planned)
+**Example**:
 
-Edit node properties in a scene.
+```json
+{
+  "tool": "add_node",
+  "arguments": {
+    "scene_path": "scenes/World.tscn",
+    "parent_node_name": ".",
+    "node_type": "Camera2D",
+    "node_name": "MainCamera",
+    "properties": {
+      "zoom": "Vector2(2, 2)"
+    }
+  }
+}
+```
+
+---
+
+#### `edit_node`
+
+Modify properties of a node in a `.tscn` scene. Supports adding new properties, updating existing ones, and removing (set to `null`).
 
 **Parameters**:
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `scene_path` | string | Yes | Path to `.tscn` file |
-| `node_path` | string | Yes | Node path (e.g., "Node2D/Player/Sprite2D") |
-| `properties` | object | Yes | Properties to modify |
+| `node_name` | string | Yes | Name of the node to edit |
+| `properties` | object | Yes | Properties to modify (set to `null` to remove) |
+
+**Example**:
+
+```json
+{
+  "tool": "edit_node",
+  "arguments": {
+    "scene_path": "scenes/World.tscn",
+    "node_name": "Player",
+    "properties": {
+      "position": "Vector2(100, 200)",
+      "speed": 300
+    }
+  }
+}
+```
+
+**Output**: Detailed change report (added/updated/removed properties).
+
+---
+
+#### `create_script`
+
+Create a new `.gd` GDScript file. Optionally attach it to a node in a `.tscn` scene (adds `ext_resource` and `script` property on the node).
+
+**Parameters**:
+
+| Parameter | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `script_path` | string | Yes | Path to save the `.gd` file |
+| `content` | string | Yes | GDScript code content |
+| `scene_path` | string | No | Path to `.tscn` scene (for script attachment) |
+| `node_name` | string | No | Name of the node to attach the script (requires `scene_path`) |
+
+**Example**:
+
+```json
+{
+  "tool": "create_script",
+  "arguments": {
+    "script_path": "scripts/player.gd",
+    "content": "extends CharacterBody2D\n\nfunc _ready():\n\tpass\n",
+    "scene_path": "scenes/Player.tscn",
+    "node_name": "Player"
+  }
+}
+```
+
+---
 
 #### `run_project` (Planned)
 

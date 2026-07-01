@@ -12,6 +12,7 @@ import { readScript } from "./tools/read_script.js";
 import { addNode } from "./tools/add_node.js";
 import { editNode } from "./tools/edit_node.js";
 import { createScript } from "./tools/create_script.js";
+import { runGodotProject } from "./tools/run_project.js";
 
 // Create MCP server instance
 const server = new Server(
@@ -185,6 +186,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["script_path", "content"],
+        },
+      },
+      {
+        name: "run_project",
+        description: "Run a Godot project using the Godot CLI (detects Godot executable automatically)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_path: {
+              type: "string",
+              description: "Path to Godot project root (must contain project.godot)",
+            },
+            mode: {
+              type: "string",
+              description: "Run mode (optional): 'normal' (default), 'headless', or 'debug'",
+              enum: ["normal", "headless", "debug"],
+            },
+            extra_args: {
+              type: "array",
+              items: { type: "string" },
+              description: "Optional extra CLI arguments to pass to Godot",
+            },
+          },
+          required: ["project_path"],
         },
       },
     ],
@@ -361,6 +386,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content,
         scene_path: scenePath,
         node_name: nodeName,
+      });
+      return {
+        content: [{ type: "text", text: result }],
+      };
+    }
+
+    if (name === "run_project") {
+      const projectPath = args?.project_path as string;
+      const mode = args?.mode as "normal" | "headless" | "debug" | undefined;
+      const extraArgs = args?.extra_args as string[] | undefined;
+
+      if (!projectPath) {
+        throw new Error("Missing required parameter: project_path");
+      }
+
+      const result = runGodotProject({
+        project_path: projectPath,
+        mode: mode || "normal",
+        extra_args: extraArgs,
       });
       return {
         content: [{ type: "text", text: result }],
