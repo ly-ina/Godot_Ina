@@ -5,7 +5,6 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
 import { listScenes } from "./tools/list_scenes.js";
 import { readScene } from "./tools/read_scene.js";
 import { createScene } from "./tools/create_scene.js";

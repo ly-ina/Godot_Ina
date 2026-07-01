@@ -27,6 +27,15 @@ npm-debug.log*
 # Test fixtures (generated during testing)
 test-fixtures/scenes/TestScene*.tscn
 
+# WorkBuddy (agent memory & runtime data)
+.workbuddy/
+
+# Debug logs (generated during parser development)
+parser-debug*.log
+
+# Source maps (TypeScript build output)
+*.js.map
+
 # Windows reserved device names (causes Git errors)
 NUL
 CON
