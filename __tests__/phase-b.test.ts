@@ -33,16 +33,21 @@ describe("analyzeProject", () => {
 
 describe("generateComponent", () => {
   const TEST_DIR = path.resolve("test-fixtures/scenes/__gen_test");
+const TARGET_DIR = path.resolve("test-fixtures/scenes/scenes/__gen_test");
+const SCRIPT_DIR = path.resolve("test-fixtures/scenes/scripts/__gen_test");
 
   afterEach(() => {
-    // Clean up generated files
-    const files = ["Player.tscn", "Player.gd", "Coin.tscn", "Coin.gd"];
-    for (const f of files) {
-      try { fs.unlinkSync(path.join(TEST_DIR, f)); } catch {}
-      try { fs.unlinkSync(path.join(TEST_DIR.replace("scenes", "scripts"), f)); } catch {}
+    // Clean up all generated files in the target directories
+    for (const dir of [TARGET_DIR, SCRIPT_DIR]) {
+      if (fs.existsSync(dir)) {
+        for (const entry of fs.readdirSync(dir)) {
+          try { fs.unlinkSync(path.join(dir, entry)); } catch {}
+        }
+        try { fs.rmdirSync(dir); } catch {}
+      }
     }
-    try { fs.rmdirSync(TEST_DIR); } catch {}
-    try { fs.rmdirSync(TEST_DIR.replace("scenes", "scripts")); } catch {}
+    // Also clean up old test dir
+    try { if (fs.existsSync(TEST_DIR)) fs.rmdirSync(TEST_DIR); } catch {}
   });
 
   it("rejects unknown component type", () => {

@@ -46,8 +46,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| MCP Tools | **27** 个 |
-| 测试用例 | **306** 个（27 个测试文件） |
+| MCP Tools | **29** 个 |
+| 测试用例 | **308** 个（27 个测试文件） |
 | 行覆盖率 | **95%** |
 | CI | GitHub Actions (Node 20 / 22) |
 | 版本 | **v0.2.0** |
@@ -258,6 +258,8 @@ npx vitest run __tests__/godot-integration.test.ts
 |------|------|
 | `analyze_project` — 项目全量分析（场景结构、脚本概览、资源依赖、架构洞察） | ✅ |
 | `generate_component` — 8 种即用型游戏组件自动生成（player/enemy/collectible/hud/health/projectile/spawner/level） | ✅ |
+| `generate_terrain` — 程序化地形（固定地图 + 无限区块 + 洞穴/矿物/液体/植被） | ✅ |
+| `generate_behavior_tree` — 行为树 NPC AI（需求系统 + 人格特质 + 日程系统） | ✅ |
 | 场景可视化 | ✅ 通过 Visualizer 渲染场景树 |
 | `edit_script` 行号模式 | ✅ 行号编辑 |
 | 错误建议 | ✅ 结构化返回可操作信息 |

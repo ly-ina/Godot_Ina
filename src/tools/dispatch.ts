@@ -25,6 +25,10 @@ import { batchEditScript } from "./batch_edit_script.js";
 import { initProject } from "./init_project.js";
 import { analyzeProject } from "./analyze_project.js";
 import { generateComponent } from "./generate_component.js";
+import { generateTerrain } from "./generate_terrain.js";
+import { generateBehaviorTree } from "./generate_behavior_tree.js";
+import type { GenerateTerrainArgs } from "./generate_terrain.js";
+import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -397,6 +401,43 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path", "component"],
       },
     },
+    {
+      name: "generate_terrain",
+      description: "Generate a procedural terrain world — fixed 2D TileMap or infinite chunk-based (Minecraft-style). Supports caves, ores, liquids, foliage.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "World name (default: World)" },
+          world_type: { type: "string", enum: ["2d", "flat3d"], description: "World type (default: 2d)" },
+          width: { type: "number", description: "Width in tiles (default: 64)" },
+          height: { type: "number", description: "Height in tiles (default: 64)" },
+          seed: { type: "number", description: "Random seed (default: random)" },
+          caves: { type: "boolean", description: "Include caves (default: true)" },
+          ores: { type: "boolean", description: "Include ores (default: true)" },
+          liquids: { type: "boolean", description: "Include water/lava (default: true)" },
+          foliage: { type: "boolean", description: "Include foliage (default: true)" },
+          infinite: { type: "boolean", description: "Enable infinite chunk-based world (default: false)" },
+          chunk_size: { type: "number", description: "Chunk size for infinite worlds (default: 32)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "generate_behavior_tree",
+      description: "Generate a complete behavior tree AI system for NPCs — Sims-style needs, traits, daily schedule, and utility-based action selection.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "NPC type name (default: NPC)" },
+          needs_count: { type: "number", description: "Number of needs to track 1-5 (default: 3)" },
+          traits: { type: "boolean", description: "Include personality traits (default: true)" },
+          schedule: { type: "boolean", description: "Include daily schedule (default: true)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -650,6 +691,34 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const targetDir = args?.target_dir as string | undefined;
     if (!projectPath || !component) throw new Error("Missing required params: project_path, component");
     return { content: [{ type: "text", text: generateComponent({ project_path: projectPath, component, name, target_dir: targetDir }) }] };
+  }
+
+  // --- generate_terrain ---
+  if (name === "generate_terrain") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    const opts: GenerateTerrainArgs = {
+      project_path: projectPath,
+      name: args?.name as string | undefined,
+      world_type: args?.world_type as "2d" | "flat3d" | undefined,
+      width: args?.width as number | undefined,
+      height: args?.height as number | undefined,
+      seed: args?.seed as number | undefined,
+      caves: args?.caves as boolean | undefined,
+      ores: args?.ores as boolean | undefined,
+      liquids: args?.liquids as boolean | undefined,
+      foliage: args?.foliage as boolean | undefined,
+      infinite: args?.infinite as boolean | undefined,
+      chunk_size: args?.chunk_size as number | undefined,
+    };
+    return { content: [{ type: "text", text: generateTerrain(opts) }] };
+  }
+
+  // --- generate_behavior_tree ---
+  if (name === "generate_behavior_tree") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateBehaviorTree({ project_path: projectPath, name: args?.name as string | undefined, needs_count: args?.needs_count as number | undefined, traits: args?.traits as boolean | undefined, schedule: args?.schedule as boolean | undefined }) }] };
   }
 
   // --- run_project ---
