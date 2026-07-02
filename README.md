@@ -32,7 +32,7 @@
 
 ## 能力概览
 
-### ✅ 已实现（15 个 MCP Tools）
+### ✅ 已实现（20 个 MCP Tools）
 
 | Tool | 功能 |
 |------|------|
@@ -50,6 +50,11 @@
 | `validate_scene` | 校验 `.tscn` 场景完整性 |
 | `validate_project` | 校验整个 Godot 项目 |
 | `execute_gdscript` | 通过 Godot CLI 执行 GDScript 代码 |
+| `list_resources` | 列出项目资源文件（按类型筛选） |
+| `read_project_settings` | 读取 project.godot 配置 |
+| `edit_project_settings` | 修改 project.godot 配置（自动备份） |
+| `search_nodes` | 跨场景搜索节点（按类型/名称/属性） |
+| `find_references` | 查找资源/脚本的场景引用 |
 | `run_project` | 通过 Godot CLI 运行项目 |
 
 ### 核心能力
@@ -65,10 +70,10 @@
 
 | 功能 | 原因 |
 |------|------|
-| 资源管理（导入图片/音效） | 缺少资源管理工具 |
-| 项目配置编辑 (`project.godot`) | 缺少配置编辑工具 |
-| 执行 GDScript 片段并获取输出 | 缺少 `execute_gdscript` 工具 |
-| 搜索/导航节点 | 缺少 `search_nodes` 工具 |
+| 资源导入/删除操作 | 缺少 `import_resource` / `delete_resource` |
+| Godot 3.x 兼容支持 | 缺少版本适配层 |
+| CI/CD 搭建 | 缺少 GitHub Actions 配置 |
+| npm 发布 | 待 v1.0 里程碑 |
 
 ---
 
@@ -77,8 +82,8 @@
 ```
 Phase 1 🏗️ 基础框架 ──── 14 tools, 228 tests  ✅
 Phase 2 🔧 实用价值 ──── edit/delete/validate  ✅
-Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ◀️ 当前
-Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0
+Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ✅
+Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 ```
 
 ### Phase 1 & 2 已完成 ✅
@@ -91,18 +96,18 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0
 - [x] 删除操作（回收站模式 + 级联确认）
 - [x] 场景/项目校验
 
-### Phase 3: 开发体验增强 ◀️ 当前阶段
+### Phase 3: 开发体验增强 ✅
 
 **目标**：让 AI 能执行代码、管理资源、配置项目，接近 Human-in-the-loop 开发体验。
 
-#### P3.1 代码执行 ✅
+- [x] P3.1 代码执行：`execute_gdscript` — 通过 Godot CLI 执行 GDScript 代码
+- [x] P3.2 资源管理：`list_resources` — 列出项目资源（按类型筛选）
+- [x] P3.3 项目配置：`read_project_settings` + `edit_project_settings`
+- [x] P3.4 搜索导航：`search_nodes` + `find_references`
 
-| 任务 | 状态 |
-|------|------|
-| `execute_gdscript` 工具 | ✅ 已完成 |
-| 单元测试 | ✅ 已完成 |
+**Phase 3 里程碑达成**：AI 能独立完成小型游戏原型的搭建和调试 🎉
 
-#### P3.2 资源管理
+### Phase 4: 版本兼容与发布 ◀️ 当前阶段
 
 | 任务 | 说明 | 优先级 |
 |------|------|--------|

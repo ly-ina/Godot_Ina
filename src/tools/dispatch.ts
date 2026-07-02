@@ -14,6 +14,11 @@ import { deleteFile } from "./delete_file.js";
 import { validateScene } from "./validate_scene.js";
 import { validateProject } from "./validate_project.js";
 import { executeGDScript } from "./execute_gdscript.js";
+import { listResources } from "./list_resources.js";
+import { readProjectSettings } from "./read_project_settings.js";
+import { editProjectSettings } from "./edit_project_settings.js";
+import { searchNodes } from "./search_nodes.js";
+import { findReferences } from "./find_references.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -224,6 +229,70 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["code", "project_path"],
       },
     },
+    {
+      name: "list_resources",
+      description: "List resource files in a Godot project, optionally filtered by type (image, audio, font, scene, script).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          type: { type: "string", enum: ["all", "image", "audio", "font", "scene", "script"], description: "Filter by resource type (default: all)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "read_project_settings",
+      description: "Read and display project.godot configuration, organized by section.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "edit_project_settings",
+      description: "Modify a setting in project.godot. Creates a .bak backup before saving.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          section: { type: "string", description: "Section name (e.g. application, rendering)" },
+          key: { type: "string", description: "Setting key (e.g. config/name, window/size/viewport_width)" },
+          value: { type: "string", description: "Value to set" },
+          type: { type: "string", enum: ["string", "int", "float", "bool"], description: "Optional type hint" },
+        },
+        required: ["project_path", "section", "key", "value"],
+      },
+    },
+    {
+      name: "search_nodes",
+      description: "Search for nodes across all scene files by type, name, or property.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          node_type: { type: "string", description: "Filter by node type (e.g. CharacterBody2D)" },
+          name_contains: { type: "string", description: "Filter by name (substring match)" },
+          has_property: { type: "string", description: "Filter by property name" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "find_references",
+      description: "Find where a resource or script is referenced across all scenes in a project.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          resource_path: { type: "string", description: "Resource path to search for (e.g. res://player.gd)" },
+        },
+        required: ["project_path", "resource_path"],
+      },
+    },
   ];
 }
 
@@ -359,6 +428,52 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const timeout = args?.timeout as number | undefined;
     if (!code || !projectPath) throw new Error("Missing required params: code, project_path");
     return { content: [{ type: "text", text: executeGDScript({ code, project_path: projectPath, timeout }) }] };
+  }
+
+  // --- list_resources ---
+  if (name === "list_resources") {
+    const projectPath = args?.project_path as string;
+    const type = args?.type as string | undefined;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: listResources({ project_path: projectPath, type: type as "all" | "image" | "audio" | "font" | "scene" | "script" | undefined }) }] };
+  }
+
+  // --- read_project_settings ---
+  if (name === "read_project_settings") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: readProjectSettings({ project_path: projectPath }) }] };
+  }
+
+  // --- edit_project_settings ---
+  if (name === "edit_project_settings") {
+    const projectPath = args?.project_path as string;
+    const section = args?.section as string;
+    const key = args?.key as string;
+    const value = args?.value as string;
+    const type = args?.type as "string" | "int" | "float" | "bool" | undefined;
+    if (!projectPath || !section || !key || value === undefined) {
+      throw new Error("Missing required params: project_path, section, key, value");
+    }
+    return { content: [{ type: "text", text: editProjectSettings({ project_path: projectPath, section, key, value, type }) }] };
+  }
+
+  // --- search_nodes ---
+  if (name === "search_nodes") {
+    const projectPath = args?.project_path as string;
+    const nodeType = args?.node_type as string | undefined;
+    const nameContains = args?.name_contains as string | undefined;
+    const hasProperty = args?.has_property as string | undefined;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: searchNodes({ project_path: projectPath, node_type: nodeType, name_contains: nameContains, has_property: hasProperty }) }] };
+  }
+
+  // --- find_references ---
+  if (name === "find_references") {
+    const projectPath = args?.project_path as string;
+    const resourcePath = args?.resource_path as string;
+    if (!projectPath || !resourcePath) throw new Error("Missing required params: project_path, resource_path");
+    return { content: [{ type: "text", text: findReferences({ project_path: projectPath, resource_path: resourcePath }) }] };
   }
 
   // --- run_project ---

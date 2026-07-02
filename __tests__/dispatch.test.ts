@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 15 tool definitions", () => {
+  it("returns all 20 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(15);
+    expect(tools.length).toBe(20);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -33,6 +33,11 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("validate_scene");
     expect(names).toContain("validate_project");
     expect(names).toContain("execute_gdscript");
+    expect(names).toContain("list_resources");
+    expect(names).toContain("read_project_settings");
+    expect(names).toContain("edit_project_settings");
+    expect(names).toContain("search_nodes");
+    expect(names).toContain("find_references");
   });
 });
 
@@ -104,5 +109,25 @@ describe("executeTool", () => {
 
   it("execute_gdscript with missing params throws error", () => {
     expect(() => executeTool("execute_gdscript", {})).toThrow("Missing required");
+  });
+
+  it("list_resources with missing path throws error", () => {
+    expect(() => executeTool("list_resources", {})).toThrow("Missing required");
+  });
+
+  it("read_project_settings with missing path throws error", () => {
+    expect(() => executeTool("read_project_settings", {})).toThrow("Missing required");
+  });
+
+  it("edit_project_settings with missing params throws error", () => {
+    expect(() => executeTool("edit_project_settings", {})).toThrow("Missing required");
+  });
+
+  it("search_nodes with missing path throws error", () => {
+    expect(() => executeTool("search_nodes", {})).toThrow("Missing required");
+  });
+
+  it("find_references with missing params throws error", () => {
+    expect(() => executeTool("find_references", {})).toThrow("Missing required");
   });
 });
