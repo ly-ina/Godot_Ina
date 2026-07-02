@@ -30,6 +30,7 @@ import { generateBehaviorTree } from "./generate_behavior_tree.js";
 import { generateEquipmentSystem } from "./generate_equipment_system.js";
 import { generateSceneTransition } from "./generate_scene_transition.js";
 import { generateSlgMap } from "./generate_slg_map.js";
+import { generateExampleProject } from "./generate_example_project.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -487,6 +488,19 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "generate_example_project",
+      description: "Generate a complete, ready-to-run example Godot project. Templates: platformer2d, rpg_dialogue, topdown_shooter, minimal_fps.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          output_path: { type: "string", description: "Path where the project should be created" },
+          template: { type: "string", enum: ["platformer2d", "rpg_dialogue", "topdown_shooter", "minimal_fps"], description: "Example project template" },
+          project_name: { type: "string", description: "Optional project name" },
+        },
+        required: ["output_path", "template"],
+      },
+    },
   ];
 }
 
@@ -789,6 +803,15 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const projectPath = args?.project_path as string;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
     return { content: [{ type: "text", text: generateSlgMap({ project_path: projectPath, name: args?.name as string | undefined, grid_type: args?.grid_type as "hex" | "square" | undefined, width: args?.width as number | undefined, height: args?.height as number | undefined, fog_of_war: args?.fog_of_war as boolean | undefined, turn_system: args?.turn_system as boolean | undefined }) }] };
+  }
+
+  // --- generate_example_project ---
+  if (name === "generate_example_project") {
+    const outputPath = args?.output_path as string;
+    const template = args?.template as string;
+    const projectName = args?.project_name as string | undefined;
+    if (!outputPath || !template) throw new Error("Missing required params: output_path, template");
+    return { content: [{ type: "text", text: generateExampleProject({ output_path: outputPath, template: template as "platformer2d" | "rpg_dialogue" | "topdown_shooter" | "minimal_fps", project_name: projectName }) }] };
   }
 
   // --- run_project ---

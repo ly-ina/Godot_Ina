@@ -2,10 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/tests-271%20passed-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/tests-311%20passed-brightgreen)]()
 [![Node](https://img.shields.io/badge/node-20%2B-blue)]()
 
-让 AI 助手直接读写 Godot 项目文件的 MCP Server。**20 个工具，271 个测试，4 个阶段全部完成。**
+让 AI 助手直接读写 Godot 项目文件的 MCP Server。**32 个工具，311 个测试。**
 
 ---
 
@@ -46,8 +46,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| MCP Tools | **32** 个 |
-| 测试用例 | **311** 个（27 个测试文件） |
+| MCP Tools | **33** 个 |
+| 测试用例 | **312** 个（27 个测试文件） |
 | 行覆盖率 | **95%** |
 | CI | GitHub Actions (Node 20 / 22) |
 | 版本 | **v0.2.0** |
@@ -264,16 +264,33 @@ npx vitest run __tests__/godot-integration.test.ts
 | `edit_script` 行号模式 | ✅ 行号编辑 |
 | 错误建议 | ✅ 结构化返回可操作信息 |
 
-### Phase C: 生态建设
+### Phase C: 生态建设 ◀️ 当前阶段
 
 **目标**：让项目可以被发现、被使用、被贡献。
 
 | 任务 | 说明 |
 |------|------|
-| Godot 3.x 深度适配 | 完整覆盖 GDScript 1.0 → 2.0 自动翻译 |
-| CI 兼容性矩阵 | Godot 多版本自动集成测试 |
-| 示例项目 | 官方示例：2D 平台跳跃、RPG 对话系统 |
-| 社区文档 | 使用教程、最佳实践、常见 recipes |
+| Godot 3.x 深度适配 | 完整覆盖 GDScript 1.0 → 2.0 自动翻译 | ✅ |
+| CI 兼容性矩阵 | Godot 多版本自动集成测试 + ubuntu-24.04 | ✅ |
+| `generate_example_project` | 一键生成完整游戏项目（4 种模板） | ✅ |
+| 社区文档 | 安装指南、Tools 参考、CONTRIBUTING.md | ✅ |
+
+### Hot Games Feature Wishlist
+
+**未来计划实现的热门游戏功能（Phase C 完成后）：**
+
+| 游戏 | 功能 | 技术要点 |
+|------|------|---------|
+| 《空洞骑士》 | 类银河城地图关卡系统 | 区域互锁、单向门、解锁能力解锁区域、传送点网络 |
+| 《黑帝斯》 | 肉鸽房间生成 + 武器Build系统 | 房间模板池、随机房间连接、武器技能组合、祝福/神恩系统 |
+| 《星露谷物语》 | 种田经营系统（已完成场景切换） | 四季作物生长、NPC好感度、节日系统、工具升级、钓鱼小游戏 |
+| 《极乐迪斯科》 | 对话树 + 技能判定系统 | 分支对话图编辑器、白黑技能骰子、思想柜、检定系统 |
+| 《杀戮尖塔》 | 牌组构建 + 战斗系统 | 卡牌定义、出牌逻辑、效果链、怪物意图系统、遗物系统 |
+| 《以撒的结合》 | 随机道具池 + 房间联动 | 道具池权重、被动/主动道具、房间清怪解锁、Boss房/宝物房联动 |
+| 《星际战甲》 | Warframe 模块化装备 | 模块插槽、MOD自由组合、数值动态计算、外观幻化系统 |
+| 《博德之门3》 | 掷骰叙事 + 环境交互 | D20规则、环境互动脚本、多分支叙事状态机、队友对话系统 |
+| 《动物森友会》 | 岛屿改造 + 家具摆放 | 地形编辑、网格吸附摆放、房间装修、DIY合成、化石鉴定 |
+| 《传送门》 | 传送枪 + 物理谜题 | 双端口传送、物体质量/动量、激光/光束、凝胶/弹跳表面 |
 
 ### Final: 发布
 
