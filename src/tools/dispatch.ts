@@ -32,6 +32,7 @@ import { generateSceneTransition } from "./generate_scene_transition.js";
 import { generateSlgMap } from "./generate_slg_map.js";
 import { generateExampleProject } from "./generate_example_project.js";
 import { translateProject } from "./translate_project.js";
+import { generateAnimation } from "./generate_animation.js";
 import { generateSprite, GenerateSpriteArgs } from "./generate_sprite.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
@@ -533,6 +534,26 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["output_path"],
       },
     },
+    {
+      name: "generate_animation",
+      description: "Generate a complete character animation system: scene + AnimatedSprite2D + sprite sheet layout + GDScript controller. Supports idle, walk, run, crouch, turn, jump.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "Character name" },
+          frame_width: { type: "number", description: "Frame width in pixels (default: 32)" },
+          frame_height: { type: "number", description: "Frame height in pixels (default: 48)" },
+          idle: { type: "boolean", description: "Include idle animation (default: true)" },
+          walk: { type: "boolean", description: "Include walk animation (default: true)" },
+          run: { type: "boolean", description: "Include run animation (default: false)" },
+          crouch: { type: "boolean", description: "Include crouch animation (default: false)" },
+          turn: { type: "boolean", description: "Include turn animation (default: false)" },
+          jump: { type: "boolean", description: "Include jump animation (default: false)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -867,6 +888,24 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
       transparent: args?.transparent as boolean | undefined,
     };
     return { content: [{ type: "text", text: generateSprite(opts) }] };
+  }
+
+  // --- generate_animation ---
+  if (name === "generate_animation") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateAnimation({
+      project_path: projectPath,
+      name: args?.name as string | undefined,
+      frame_width: args?.frame_width as number | undefined,
+      frame_height: args?.frame_height as number | undefined,
+      idle: args?.idle as boolean | undefined,
+      walk: args?.walk as boolean | undefined,
+      run: args?.run as boolean | undefined,
+      crouch: args?.crouch as boolean | undefined,
+      turn: args?.turn as boolean | undefined,
+      jump: args?.jump as boolean | undefined,
+    }) }] };
   }
 
   // --- run_project ---
