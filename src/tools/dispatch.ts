@@ -32,6 +32,7 @@ import { generateSceneTransition } from "./generate_scene_transition.js";
 import { generateSlgMap } from "./generate_slg_map.js";
 import { generateExampleProject } from "./generate_example_project.js";
 import { translateProject } from "./translate_project.js";
+import { generateSprite } from "./generate_sprite.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -515,6 +516,21 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "generate_sprite",
+      description: "Generate a pixel-art style character sprite as SVG. Supports: player, enemy_slime, enemy_skeleton, npc_villager, item_coin, item_heart, item_sword, projectile. Color themes: default, red, blue, green, gold, purple.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          output_path: { type: "string", description: "Output directory (e.g. project's assets/textures folder)" },
+          character: { type: "string", enum: ["player", "enemy_slime", "enemy_skeleton", "npc_villager", "item_coin", "item_heart", "item_sword", "projectile"], description: "Character type" },
+          color_theme: { type: "string", enum: ["default", "red", "blue", "green", "gold", "purple"], description: "Color theme (default: default)" },
+          filename: { type: "string", description: "Output filename (without extension)" },
+          size: { type: "number", description: "Sprite size in pixels (default: 16)" },
+        },
+        required: ["output_path", "character"],
+      },
+    },
   ];
 }
 
@@ -833,6 +849,17 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const projectPath = args?.project_path as string;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
     return { content: [{ type: "text", text: translateProject({ project_path: projectPath, target: args?.target as "all" | "scenes" | "scripts" | undefined, create_backup: args?.create_backup as boolean | undefined }) }] };
+  }
+
+  // --- generate_sprite ---
+  if (name === "generate_sprite") {
+    const outputPath = args?.output_path as string;
+    const character = args?.character as string;
+    const colorTheme = args?.color_theme as string | undefined;
+    const filename = args?.filename as string | undefined;
+    const size = args?.size as number | undefined;
+    if (!outputPath || !character) throw new Error("Missing required params: output_path, character");
+    return { content: [{ type: "text", text: generateSprite({ output_path: outputPath, character: character as "player" | "enemy_slime" | "enemy_skeleton" | "npc_villager" | "item_coin" | "item_heart" | "item_sword" | "projectile", color_theme: colorTheme, filename, size }) }] };
   }
 
   // --- run_project ---
