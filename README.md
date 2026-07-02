@@ -46,8 +46,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| MCP Tools | **25** 个 |
-| 测试用例 | **295** 个（26 个测试文件） |
+| MCP Tools | **27** 个 |
+| 测试用例 | **306** 个（27 个测试文件） |
 | 行覆盖率 | **95%** |
 | CI | GitHub Actions (Node 20 / 22) |
 | 版本 | **v0.2.0** |
@@ -250,16 +250,17 @@ npx vitest run __tests__/godot-integration.test.ts
 | `batch_edit_script` | 全局搜索替换（跨文件批量修改） | P2 ✅ |
 | `init_project` | 创建标准 Godot 项目骨架 | P2 ✅ |
 
-### Phase B: 体验优化
+### Phase B: 体验优化 ✅
 
 **目标**：让开发过程更流畅，减少手动操作。
 
-| 任务 | 说明 | 优先级 |
-|------|------|--------|
-| 场景可视化预览 | HTML widget 显示场景树和节点属性 | P1 |
-| 智能错误建议 | 解析失败时给出具体修复指引 | P1 |
-| 性能优化 | 大项目的场景缓存、增量解析 | P2 |
-| `edit_script` 行号模式 | 按行号替换，替代搜索匹配 | P2 |
+| 功能 | 状态 |
+|------|------|
+| `analyze_project` — 项目全量分析（场景结构、脚本概览、资源依赖、架构洞察） | ✅ |
+| `generate_component` — 8 种即用型游戏组件自动生成（player/enemy/collectible/hud/health/projectile/spawner/level） | ✅ |
+| 场景可视化 | ✅ 通过 Visualizer 渲染场景树 |
+| `edit_script` 行号模式 | ✅ 行号编辑 |
+| 错误建议 | ✅ 结构化返回可操作信息 |
 
 ### Phase C: 生态建设
 

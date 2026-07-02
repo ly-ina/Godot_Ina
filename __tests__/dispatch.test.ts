@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 25 tool definitions", () => {
+  it("returns all 27 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(25);
+    expect(tools.length).toBe(27);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -43,6 +43,8 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("rename_node");
     expect(names).toContain("batch_edit_script");
     expect(names).toContain("init_project");
+    expect(names).toContain("analyze_project");
+    expect(names).toContain("generate_component");
   });
 });
 
@@ -154,5 +156,13 @@ describe("executeTool", () => {
 
   it("init_project with missing path throws error", () => {
     expect(() => executeTool("init_project", {})).toThrow("Missing required");
+  });
+
+  it("analyze_project with missing path throws error", () => {
+    expect(() => executeTool("analyze_project", {})).toThrow("Missing required");
+  });
+
+  it("generate_component with missing params throws error", () => {
+    expect(() => executeTool("generate_component", {})).toThrow("Missing required");
   });
 });

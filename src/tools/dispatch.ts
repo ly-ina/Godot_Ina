@@ -23,6 +23,8 @@ import { deleteResource } from "./delete_resource.js";
 import { renameNode } from "./rename_node.js";
 import { batchEditScript } from "./batch_edit_script.js";
 import { initProject } from "./init_project.js";
+import { analyzeProject } from "./analyze_project.js";
+import { generateComponent } from "./generate_component.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -368,6 +370,33 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "analyze_project",
+      description: "Comprehensive project analysis: scene inventory, node trees, script summaries, resource references, and structural insights. Essential for AI to understand project architecture.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          include_scene_content: { type: "boolean", description: "Include full scene node tree (default: true)" },
+          include_script_summaries: { type: "boolean", description: "Include script function/signal overviews (default: true)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "generate_component",
+      description: "Generate a complete, ready-to-use game component with scene file and GDScript. Supports: player, enemy, collectible, hud, health, projectile, spawner, level.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          component: { type: "string", enum: ["player", "enemy", "collectible", "hud", "health", "projectile", "spawner", "level"], description: "Component type to generate" },
+          name: { type: "string", description: "Custom name for the component (defaults to type)" },
+          target_dir: { type: "string", description: "Target subdirectory (e.g. 'scenes/enemies')" },
+        },
+        required: ["project_path", "component"],
+      },
+    },
   ];
 }
 
@@ -602,6 +631,25 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const height = args?.height as number | undefined;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
     return { content: [{ type: "text", text: initProject({ project_path: projectPath, project_name: projectName, width, height }) }] };
+  }
+
+  // --- analyze_project ---
+  if (name === "analyze_project") {
+    const projectPath = args?.project_path as string;
+    const includeSceneContent = args?.include_scene_content as boolean | undefined;
+    const includeScriptSummaries = args?.include_script_summaries as boolean | undefined;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: analyzeProject({ project_path: projectPath, include_scene_content: includeSceneContent, include_script_summaries: includeScriptSummaries }) }] };
+  }
+
+  // --- generate_component ---
+  if (name === "generate_component") {
+    const projectPath = args?.project_path as string;
+    const component = args?.component as string;
+    const name = args?.name as string | undefined;
+    const targetDir = args?.target_dir as string | undefined;
+    if (!projectPath || !component) throw new Error("Missing required params: project_path, component");
+    return { content: [{ type: "text", text: generateComponent({ project_path: projectPath, component, name, target_dir: targetDir }) }] };
   }
 
   // --- run_project ---
