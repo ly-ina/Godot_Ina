@@ -80,7 +80,7 @@
 ## 开发计划
 
 ```
-Phase 1 🏗️ 基础框架 ──── 14 tools, 228 tests  ✅
+Phase 1 🏗️ 基础框架 ──── 20 tools, 238 tests  ✅
 Phase 2 🔧 实用价值 ──── edit/delete/validate  ✅
 Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ✅
 Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
@@ -88,8 +88,8 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 
 ### Phase 1 & 2 已完成 ✅
 
-- [x] 14 个 MCP Tools：场景读写、节点编辑、脚本管理、运行项目、删除、校验
-- [x] 228 个测试用例，21 个测试文件，真实 Godot 集成测试
+- [x] 20 个 MCP Tools：场景读写、节点编辑、脚本管理、运行项目、删除、校验、搜索、配置
+- [x] 238 个测试用例，22 个测试文件，真实 Godot 集成测试
 - [x] `.tscn` 解析器 + 生成器 + 完整 round-trip
 - [x] Godot CLI 集成 + 自动检测
 - [x] 脚本编辑器（搜索替换 + 自动备份）
@@ -107,63 +107,17 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 
 **Phase 3 里程碑达成**：AI 能独立完成小型游戏原型的搭建和调试 🎉
 
-### Phase 4: 版本兼容与发布 ◀️ 当前阶段
-
-| 任务 | 说明 | 优先级 |
-|------|------|--------|
-| `list_resources` | 列出项目资源（图片、音效、字体等） | P1 |
-| `import_resource` | 导入/引用外部资源文件 | P2 |
-| `delete_resource` | 删除资源文件（含场景引用检查） | P2 |
-
-#### P3.3 项目配置
-
-| 任务 | 说明 | 优先级 |
-|------|------|--------|
-| `edit_project_settings` | 修改 `project.godot` 配置项（如窗口大小、输入映射） | P1 |
-| `read_project_settings` | 读取项目配置 | P1 |
-
-#### P3.4 搜索与导航
-
-| 任务 | 说明 | 优先级 |
-|------|------|--------|
-| `search_nodes` | 按类型/名称/属性搜索节点 | P2 |
-| `find_references` | 查找资源/脚本在哪些场景中被引用 | P2 |
-
-**Phase 3 里程碑**：AI 能独立完成小型游戏原型的搭建和调试
-
 ---
 
-### Phase 4: 版本兼容与发布
+### Phase 4: 版本兼容与发布 ◀️ 当前阶段
 
 **目标**：覆盖多版本 Godot，正式发布到 npm。
 
-#### P4.1 Godot 3.x 适配
-
-| 任务 | 说明 | 估算 |
-|------|------|------|
-| 适配层架构 | 实现 `src/adapters/v3/`，`adapter.ts` 工厂方法 | 2 天 |
-| `.tscn` 格式 | 处理 format=2/3 vs format=3 差异 | 2 天 |
-| 节点类型 | 映射 `KinematicBody2D` → `CharacterBody2D` 等 | 1 天 |
-| GDScript | 处理 1.0 语法差异 | 1 天 |
-| CLI 参数 | 处理 Godot 3.x 命令行参数差异 | 1 天 |
-| 自动检测 | 读取 `.tscn` header 的 format 字段，自动选择适配器 | 1 天 |
-
-#### P4.2 CI/CD
-
-| 任务 | 说明 |
-|------|------|
-| `ci.yml` | PR 时自动运行测试 + lint |
-| `release.yml` | 打标签时自动发布到 npm + GitHub Release |
-| 兼容性测试 | 定期用多版本 Godot 运行集成测试 |
-
-#### P4.3 文档与发布
-
-| 任务 | 说明 |
-|------|------|
-| `docs/` 子目录 | 安装指南、配置说明、Tools 参考、AI 调用示例 |
-| `CONTRIBUTING.md` | 贡献指南 |
-| npm 发布 | 确定包名，最终 `package.json`，`npm publish` |
-| GitHub Release | Changelog + 发布通告 |
+- [x] P4.2 CI/CD — GitHub Actions CI（push/PR 自动测试 + lint）
+- [x] P4.3 文档 — 安装指南、Tools 参考、CONTRIBUTING.md
+- [ ] P4.1 Godot 3.x 适配 — 适配层架构、.tscn 格式差异、节点类型映射
+- [ ] P4.2 Release workflow — 标签触发自动发布到 npm
+- [ ] P4.3 npm 发布 — 最终包名、CHANGELOG、v1.0 release
 
 **Phase 4 里程碑**：📦 v1.0 发布到 npm
 
