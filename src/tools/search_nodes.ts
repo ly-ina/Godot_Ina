@@ -1,7 +1,6 @@
 // MCP Tool: search_nodes — search for nodes across scene files
 import { parseTscnFile } from "../parsers/tscn-parser.js";
 import { listScenes } from "./list_scenes.js";
-import type { SceneInfo } from "./list_scenes.js";
 
 export interface SearchNodesArgs {
   /** Path to Godot project root */

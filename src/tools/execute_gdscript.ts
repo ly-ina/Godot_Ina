@@ -27,9 +27,8 @@ export function executeGDScript(args: ExecuteGDScriptArgs): string {
   }
 
   // Make sure Godot is available
-  let godotPath: string;
   try {
-    godotPath = detectGodotExecutable();
+    detectGodotExecutable(); // throws if not found
   } catch {
     throw new Error(
       "Godot executable not found. Set GODOT_PATH environment variable " +

@@ -155,7 +155,6 @@ function formatResult(scenePath: string, issues: ValidationIssue[]): string {
     lines.push("No issues found.");
   } else {
     for (const issue of issues) {
-      const icon = issue.severity === "error" ? "!!" : "!!";
       lines.push(`[${issue.severity.toUpperCase()}] [${issue.category}] ${issue.message}`);
     }
   }

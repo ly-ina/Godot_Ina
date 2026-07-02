@@ -22,7 +22,7 @@ export interface WriteSceneOptions {
  */
 export function sceneToTscn(
   scene: ParsedScene,
-  options: WriteSceneOptions = {}
+  _options: WriteSceneOptions = {}
 ): string {
   const lines: string[] = [];
 

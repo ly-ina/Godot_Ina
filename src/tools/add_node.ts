@@ -2,7 +2,7 @@
 import { parseTscnFile } from "../parsers/tscn-parser.js";
 import { SceneNode } from "../parsers/tscn-types.js";
 import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree, getNodePath, isValidNodeType } from "../utils/tree-utils.js";
+import { findNodeInTree } from "../utils/tree-utils.js";
 import * as fs from "fs";
 import * as path from "path";
 

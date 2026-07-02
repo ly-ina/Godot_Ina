@@ -2,7 +2,6 @@
 import { listScenes } from "./list_scenes.js";
 import type { SceneInfo } from "./list_scenes.js";
 import { readScene } from "./read_scene.js";
-import type { ReadSceneResult } from "./read_scene.js";
 import { createScene } from "./create_scene.js";
 import { readScript } from "./read_script.js";
 import { addNode } from "./add_node.js";

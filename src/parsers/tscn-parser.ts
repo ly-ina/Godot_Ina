@@ -7,7 +7,6 @@ import {
   SceneNode,
   Connection,
   ParseState,
-  GODOT_4_FORMAT,
 } from "./tscn-types.js";
 
 export class TscnParser {
