@@ -18,6 +18,9 @@ import { readProjectSettings } from "./read_project_settings.js";
 import { editProjectSettings } from "./edit_project_settings.js";
 import { searchNodes } from "./search_nodes.js";
 import { findReferences } from "./find_references.js";
+import { importResource } from "./import_resource.js";
+import { deleteResource } from "./delete_resource.js";
+import { renameNode } from "./rename_node.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -292,6 +295,48 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path", "resource_path"],
       },
     },
+    {
+      name: "import_resource",
+      description: "Import an external resource file (image, audio, font, 3D model, scene, script) into the Godot project.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          source_path: { type: "string", description: "Source file path to import from" },
+          dest_path: { type: "string", description: "Destination path inside the project" },
+          mkdir: { type: "boolean", description: "Create subdirectories if needed (default: true)" },
+        },
+        required: ["source_path", "dest_path"],
+      },
+    },
+    {
+      name: "delete_resource",
+      description: "Delete a resource file with safety checks. Scans all scenes for references before deleting.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          resource_path: { type: "string", description: "Path to the resource file to delete" },
+          project_path: { type: "string", description: "Godot project root (for reference checking)" },
+          force: { type: "boolean", description: "Skip reference check and force delete (default: false)" },
+          use_trash: { type: "boolean", description: "Move to trash instead of permanent delete (default: true)" },
+        },
+        required: ["resource_path", "project_path"],
+      },
+    },
+    {
+      name: "rename_node",
+      description: "Rename a node in a .tscn scene. Optionally updates child parent references and connection references.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          scene_path: { type: "string", description: "Path to the .tscn scene file" },
+          old_name: { type: "string", description: "Current name of the node" },
+          new_name: { type: "string", description: "New name for the node" },
+          update_parent_refs: { type: "boolean", description: "Update child node parent references (default: true)" },
+          update_connections: { type: "boolean", description: "Update connection references (default: true)" },
+        },
+        required: ["scene_path", "old_name", "new_name"],
+      },
+    },
   ];
 }
 
@@ -473,6 +518,36 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const resourcePath = args?.resource_path as string;
     if (!projectPath || !resourcePath) throw new Error("Missing required params: project_path, resource_path");
     return { content: [{ type: "text", text: findReferences({ project_path: projectPath, resource_path: resourcePath }) }] };
+  }
+
+  // --- import_resource ---
+  if (name === "import_resource") {
+    const sourcePath = args?.source_path as string;
+    const destPath = args?.dest_path as string;
+    const mkdir = args?.mkdir as boolean | undefined;
+    if (!sourcePath || !destPath) throw new Error("Missing required params: source_path, dest_path");
+    return { content: [{ type: "text", text: importResource({ source_path: sourcePath, dest_path: destPath, mkdir }) }] };
+  }
+
+  // --- delete_resource ---
+  if (name === "delete_resource") {
+    const resourcePath = args?.resource_path as string;
+    const projectPath = args?.project_path as string;
+    const force = args?.force as boolean | undefined;
+    const useTrash = args?.use_trash as boolean | undefined;
+    if (!resourcePath || !projectPath) throw new Error("Missing required params: resource_path, project_path");
+    return { content: [{ type: "text", text: deleteResource({ resource_path: resourcePath, project_path: projectPath, force, use_trash: useTrash }) }] };
+  }
+
+  // --- rename_node ---
+  if (name === "rename_node") {
+    const scenePath = args?.scene_path as string;
+    const oldName = args?.old_name as string;
+    const newName = args?.new_name as string;
+    const updateParentRefs = args?.update_parent_refs as boolean | undefined;
+    const updateConnections = args?.update_connections as boolean | undefined;
+    if (!scenePath || !oldName || !newName) throw new Error("Missing required params: scene_path, old_name, new_name");
+    return { content: [{ type: "text", text: renameNode({ scene_path: scenePath, old_name: oldName, new_name: newName, update_parent_refs: updateParentRefs, update_connections: updateConnections }) }] };
   }
 
   // --- run_project ---

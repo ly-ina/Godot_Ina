@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 20 tool definitions", () => {
+  it("returns all 23 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(20);
+    expect(tools.length).toBe(23);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -38,6 +38,9 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("edit_project_settings");
     expect(names).toContain("search_nodes");
     expect(names).toContain("find_references");
+    expect(names).toContain("import_resource");
+    expect(names).toContain("delete_resource");
+    expect(names).toContain("rename_node");
   });
 });
 
@@ -129,5 +132,17 @@ describe("executeTool", () => {
 
   it("find_references with missing params throws error", () => {
     expect(() => executeTool("find_references", {})).toThrow("Missing required");
+  });
+
+  it("import_resource with missing params throws error", () => {
+    expect(() => executeTool("import_resource", {})).toThrow("Missing required");
+  });
+
+  it("delete_resource with missing params throws error", () => {
+    expect(() => executeTool("delete_resource", {})).toThrow("Missing required");
+  });
+
+  it("rename_node with missing params throws error", () => {
+    expect(() => executeTool("rename_node", {})).toThrow("Missing required");
   });
 });

@@ -46,8 +46,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| MCP Tools | **20** 个 |
-| 测试用例 | **271** 个（24 个测试文件） |
+| MCP Tools | **23** 个 |
+| 测试用例 | **286** 个（25 个测试文件） |
 | 行覆盖率 | **95%** |
 | CI | GitHub Actions (Node 20 / 22) |
 | 版本 | **v0.2.0** |
@@ -238,15 +238,15 @@ npx vitest run __tests__/godot-integration.test.ts
 
 ## 未来规划
 
-### Phase A: 工具补全（当前阶段）
+### Phase A: 工具补全 ✅
 
 **目标**：覆盖"能做但不能做全"的缺口，让工具链更完整。
 
 | 任务 | 说明 | 优先级 |
 |------|------|--------|
-| `import_resource` | 导入图片/音效/字体资源文件 | P1 |
-| `delete_resource` | 删除资源文件（含引用安全检查） | P1 |
-| `rename_node` | 节点重命名（级联更新引用） | P2 |
+| `import_resource` | 导入图片/音效/字体资源文件 | P1 ✅ |
+| `delete_resource` | 删除资源文件（含引用安全检查） | P1 ✅ |
+| `rename_node` | 节点重命名（级联更新引用） | P2 ✅ |
 | `batch_edit_script` | 全局搜索替换（跨文件批量修改） | P2 |
 | 项目模板 | `init_project` 创建标准 Godot 项目骨架 | P2 |
 
