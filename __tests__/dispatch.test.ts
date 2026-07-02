@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 29 tool definitions", () => {
+  it("returns all 32 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(29);
+    expect(tools.length).toBe(32);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -47,6 +47,9 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("generate_component");
     expect(names).toContain("generate_terrain");
     expect(names).toContain("generate_behavior_tree");
+    expect(names).toContain("generate_equipment_system");
+    expect(names).toContain("generate_scene_transition");
+    expect(names).toContain("generate_slg_map");
   });
 });
 
@@ -174,5 +177,17 @@ describe("executeTool", () => {
 
   it("generate_behavior_tree with missing path throws error", () => {
     expect(() => executeTool("generate_behavior_tree", {})).toThrow("Missing required");
+  });
+
+  it("generate_equipment_system with missing path throws error", () => {
+    expect(() => executeTool("generate_equipment_system", {})).toThrow("Missing required");
+  });
+
+  it("generate_scene_transition with missing path throws error", () => {
+    expect(() => executeTool("generate_scene_transition", {})).toThrow("Missing required");
+  });
+
+  it("generate_slg_map with missing path throws error", () => {
+    expect(() => executeTool("generate_slg_map", {})).toThrow("Missing required");
   });
 });

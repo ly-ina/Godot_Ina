@@ -27,6 +27,9 @@ import { analyzeProject } from "./analyze_project.js";
 import { generateComponent } from "./generate_component.js";
 import { generateTerrain } from "./generate_terrain.js";
 import { generateBehaviorTree } from "./generate_behavior_tree.js";
+import { generateEquipmentSystem } from "./generate_equipment_system.js";
+import { generateSceneTransition } from "./generate_scene_transition.js";
+import { generateSlgMap } from "./generate_slg_map.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -438,6 +441,52 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "generate_equipment_system",
+      description: "Generate a Terraria-style visual equipment system with inventory, equipment slots, and layered character rendering.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          slot_count: { type: "number", description: "Number of equipment slots 1-8 (default: 5)" },
+          inventory: { type: "boolean", description: "Include inventory system (default: true)" },
+          crafting: { type: "boolean", description: "Include crafting system (default: false)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "generate_scene_transition",
+      description: "Generate a Stardew Valley-style scene transition system with areas, doors, persistent state, and minimap.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          area_count: { type: "number", description: "Number of areas (default: 4)" },
+          area_style: { type: "string", enum: ["fields", "dungeon", "mixed"], description: "Area style (default: mixed)" },
+          minimap: { type: "boolean", description: "Include minimap (default: true)" },
+          persistence: { type: "boolean", description: "Include persistent state (default: true)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "generate_slg_map",
+      description: "Generate a strategy/simulation game map system with hex/grid tiles, fog of war, A* pathfinding, and turn system.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "Map name (default: StrategyMap)" },
+          grid_type: { type: "string", enum: ["hex", "square"], description: "Grid type (default: hex)" },
+          width: { type: "number", description: "Map width in tiles (default: 20)" },
+          height: { type: "number", description: "Map height in tiles (default: 20)" },
+          fog_of_war: { type: "boolean", description: "Include fog of war (default: true)" },
+          turn_system: { type: "boolean", description: "Include turn system (default: true)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -719,6 +768,27 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const projectPath = args?.project_path as string;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
     return { content: [{ type: "text", text: generateBehaviorTree({ project_path: projectPath, name: args?.name as string | undefined, needs_count: args?.needs_count as number | undefined, traits: args?.traits as boolean | undefined, schedule: args?.schedule as boolean | undefined }) }] };
+  }
+
+  // --- generate_equipment_system ---
+  if (name === "generate_equipment_system") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateEquipmentSystem({ project_path: projectPath, slot_count: args?.slot_count as number | undefined, inventory: args?.inventory as boolean | undefined, crafting: args?.crafting as boolean | undefined }) }] };
+  }
+
+  // --- generate_scene_transition ---
+  if (name === "generate_scene_transition") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateSceneTransition({ project_path: projectPath, area_count: args?.area_count as number | undefined, area_style: args?.area_style as "fields" | "dungeon" | "mixed" | undefined, minimap: args?.minimap as boolean | undefined, persistence: args?.persistence as boolean | undefined }) }] };
+  }
+
+  // --- generate_slg_map ---
+  if (name === "generate_slg_map") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateSlgMap({ project_path: projectPath, name: args?.name as string | undefined, grid_type: args?.grid_type as "hex" | "square" | undefined, width: args?.width as number | undefined, height: args?.height as number | undefined, fog_of_war: args?.fog_of_war as boolean | undefined, turn_system: args?.turn_system as boolean | undefined }) }] };
   }
 
   // --- run_project ---
