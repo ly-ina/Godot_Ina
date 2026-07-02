@@ -35,6 +35,7 @@ import { translateProject } from "./translate_project.js";
 import { generateAnimation } from "./generate_animation.js";
 import { demoCharacter } from "./demo_character.js";
 import { generateSprite, GenerateSpriteArgs } from "./generate_sprite.js";
+import { generateMinecraftDemo, GenerateMinecraftDemoArgs } from "./generate_minecraft_demo.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -506,6 +507,17 @@ export function getToolDefinitions(): ToolDefinition[] {
       },
     },
     {
+      name: "generate_minecraft_demo",
+      description: "One-command: generates a complete 2D Minecraft-like demo with procedurally generated terrain (300 blocks wide), block breaking/placing, hotbar, physics, and player controls. Output is a fully runnable Godot project.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root (created if missing)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
       name: "translate_project",
       description: "Translate a Godot 3.x project to 4.x format. Converts scene node types (KinematicBody2D → CharacterBody2D), GDScript 1.0→2.0 syntax, and updates project.godot config.",
       inputSchema: {
@@ -937,6 +949,13 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
       region: args?.region as string | undefined,
       behavior: args?.behavior as "wander" | "patrol" | "idle" | undefined,
     }) }] };
+  }
+
+  // --- generate_minecraft_demo ---
+  if (name === "generate_minecraft_demo") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: generateMinecraftDemo({ project_path: projectPath }) }] };
   }
 
   // --- run_project ---

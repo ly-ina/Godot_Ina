@@ -292,97 +292,67 @@ func _setup_waypoints() -> void:
 function createMainScene(projectPath: string, charName: string, spritePath?: string, regionStr?: string): void {
   const scenesDir = path.resolve(projectPath, "scenes");
   if (!fs.existsSync(scenesDir)) fs.mkdirSync(scenesDir, { recursive: true });
-
-  // GODOT 4 .TSCN FORMAT RULES (verified 2026-07-03):
-  // - NO quotes on: numbers, bools, Color(), Vector2(), ExtResource(), SubResource()
-  // - These are Godot-native types parsed by the engine
-  // - Quotes only needed for plain string values like text labels
-  //
-  // CRITICAL: All nodes defined inline — NO instance=ExtResource().
-  // Scene instancing silently fails if the referenced scene has any error,
-  // causing ALL child nodes to lose their parent ("parent path vanished" warning).
-
-  const content = [
-    `[gd_scene load_steps=4 format=3 uid="uid://demomain001"]`,
-    ``,
+  const L: string[] = [
+    `[gd_scene load_steps=${spritePath ? 5 : 4} format=3 uid="uid://demomain001"]`,
     `[ext_resource type="Script" path="res://scripts/characters/${charName}.gd" id="1"]`,
-    ...(spritePath ? [`[ext_resource type="Texture2D" path="res://${spritePath}" id="2"]`] : []),
-    ``,
+  ];
+  if (spritePath) L.push(`[ext_resource type="Texture2D" path="res://${spritePath}" id="2"]`);
+  L.push(
     `[sub_resource type="RectangleShape2D" id="Shape"]`,
     `size = Vector2(40, 72)`,
-    ``,
-    // ── Root ──
     `[node name="Main" type="Node2D"]`,
-    ``,
-    // ── Sky ──
     `[node name="Sky" type="ColorRect" parent="."]`,
     `anchor_right = 1.0`,
     `anchor_bottom = 1.0`,
     `color = Color(0.12, 0.14, 0.22, 1)`,
-    ``,
-    // ── Ground floor ──
     `[node name="Ground" type="StaticBody2D" parent="."]`,
     `position = Vector2(0, 300)`,
-    ``,
     `[node name="GroundVisual" type="ColorRect" parent="Ground"]`,
     `offset_left = -2000`,
     `offset_top = -10`,
     `offset_right = 2000`,
     `offset_bottom = 10`,
     `color = Color(0.18, 0.38, 0.18, 1)`,
-    ``,
     `[node name="GroundCollision" type="CollisionShape2D" parent="Ground"]`,
     `shape = SubResource("Shape")`,
-    `size = Vector2(4000, 20)`,
-    ``,
-    // ── Left wall ──
     `[node name="LeftWall" type="StaticBody2D" parent="."]`,
     `position = Vector2(-480, 150)`,
-    ``,
     `[node name="LeftCollision" type="CollisionShape2D" parent="LeftWall"]`,
     `shape = SubResource("Shape")`,
-    `size = Vector2(20, 400)`,
-    ``,
-    // ── Right wall ──
     `[node name="RightWall" type="StaticBody2D" parent="."]`,
     `position = Vector2(480, 150)`,
-    ``,
     `[node name="RightCollision" type="CollisionShape2D" parent="RightWall"]`,
     `shape = SubResource("Shape")`,
-    `size = Vector2(20, 400)`,
-    ``,
-    // ── Character (inline — NOT instanced!) ──
     `[node name="${charName}" type="CharacterBody2D" parent="."]`,
     `position = Vector2(0, 100)`,
     `script = ExtResource("1")`,
-    ...(spritePath ? [
-      // Sprite image path provided — use Sprite2D with optional region crop
-      ``,
+  );
+  if (spritePath) {
+    L.push(
       `[node name="Visual" type="Sprite2D" parent="${charName}"]`,
       `texture = ExtResource("2")`,
-      ...(regionStr ? [`region_enabled = true`, `region_rect = Rect2(${regionStr})`] : []),
-      `scale = Vector2(0.25, 0.25)`,
-    ] : [
-      // No sprite — use a visible geometric placeholder so the character is ALWAYS seeable
-      ``,
+    );
+    if (regionStr) L.push(`region_enabled = true`, `region_rect = Rect2(${regionStr})`);
+    L.push(`scale = Vector2(0.25, 0.25)`);
+  } else {
+    L.push(
       `[node name="Visual" type="ColorRect" parent="${charName}"]`,
       `offset_left = -15`,
       `offset_top = -72`,
       `offset_right = 15`,
       `offset_bottom = 0`,
       `color = Color(0.45, 0.55, 0.85, 1)`,
-      ``,
       `[node name="Head" type="ColorRect" parent="${charName}"]`,
       `offset_left = -10`,
       `offset_top = -85`,
       `offset_right = 10`,
       `offset_bottom = -72`,
       `color = Color(0.85, 0.7, 0.55, 1)`,
-    ]),
-    ``,
+    );
+  }
+  L.push(
     `[node name="CollisionShape2D" type="CollisionShape2D" parent="${charName}"]`,
     `shape = SubResource("Shape")`,
-    ``,
     `[node name="Camera2D" type="Camera2D" parent="${charName}"]`,
     `position_smoothing_enabled = true`,
     `position_smoothing_speed = 4.0`,
@@ -391,7 +361,6 @@ function createMainScene(projectPath: string, charName: string, spritePath?: str
     `limit_right = 500`,
     `limit_top = -500`,
     `limit_bottom = 500`,
-  ].join("\n");
-
-  fs.writeFileSync(path.join(scenesDir, "Main.tscn"), content, "utf-8");
+  );
+  fs.writeFileSync(path.join(scenesDir, "Main.tscn"), L.join("\n"), "utf-8");
 }

@@ -82,62 +82,47 @@ export function generateAnimation(args: GenerateAnimationArgs): string {
   const hasSprite = !!sprite_path;
   const spriteResId = hasSprite ? "2" : ""; // ext_resource id for texture
 
-  // ── Build .tscn file DIRECTLY (complete control over every property) ──
-  const loadSteps = hasSprite ? 5 : 3; // Script + Texture + Shape + (maybe nothing else)
-
+  // ── Build .tscn file directly — NO blank lines between node declarations!
+  // Godot 4's tscn parser is sensitive to blank lines between [node] blocks.
+  // CRITICAL: Never insert empty strings or comments between node declarations.
+  const loadSteps = hasSprite ? 5 : 3;
   const tscnLines: string[] = [
     `[gd_scene load_steps=${loadSteps} format=3 uid="uid://${name}_scene"]`,
-    ``,
     `[ext_resource type="Script" path="res://scripts/characters/${name}.gd" id="1"]`,
   ];
 
   if (hasSprite) {
-    tscnLines.push(
-      `[ext_resource type="Texture2D" path="res://${sprite_path}" id="2"]`,
-      ``
-    );
+    tscnLines.push(`[ext_resource type="Texture2D" path="res://${sprite_path}" id="2"]`);
   }
 
-  // Sub-resource: collision shape
   tscnLines.push(
     `[sub_resource type="RectangleShape2D" id="CollisionShape"]`,
     `size = Vector2(40, 72)`,
-    ``
   );
 
-  // Root node: CharacterBody2D
-  tscnLines.push(
-    `[node name="${name}" type="CharacterBody2D"]`,
-    `script = ExtResource("1")`
-  );
+  tscnLines.push(`[node name="${name}" type="CharacterBody2D"]`);
+  tscnLines.push(`script = ExtResource("1")`);
 
-  // Sprite node
   if (hasSprite) {
     tscnLines.push(
-      ``,
       `[node name="Sprite2D" type="Sprite2D" parent="."]`,
       `texture = ExtResource("${spriteResId}")`,
       ...regionRectStr.split("\n").filter(l => l.trim()),
-      `scale = Vector2(${effectiveScale}, ${effectiveScale})`
+      `scale = Vector2(${effectiveScale}, ${effectiveScale})`,
     );
   }
 
-  // Collision shape
   tscnLines.push(
-    ``,
     `[node name="CollisionShape2D" type="CollisionShape2D" parent="."]`,
     `shape = SubResource("CollisionShape")`,
-    `position = Vector2(0, -10)`
+    `position = Vector2(0, -10)`,
   );
 
-  // Camera (so the demo is immediately viewable)
-  // Uses smooth follow + offset so character movement is visible
   tscnLines.push(
-    ``,
     `[node name="Camera2D" type="Camera2D" parent="."]`,
     `position_smoothing_enabled = true`,
     `position_smoothing_speed = 4.0`,
-    `offset = Vector2(0, -30)`
+    `offset = Vector2(0, -30)`,
   );
 
   fs.writeFileSync(scenePath, tscnLines.join("\n"), "utf-8");

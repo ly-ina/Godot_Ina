@@ -69,5 +69,8 @@ LPT3
 # Godot editor cache (generated per-machine, not shared)
 .godot/
 
+# Demo output (generated, not tracked)
+demo-output/
+
 # Accidentals
 *.exe
