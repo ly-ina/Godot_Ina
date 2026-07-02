@@ -1,21 +1,19 @@
 // MCP Tool: generate_animation — builds Godot animation system for characters
-// Creates AnimatedSprite2D + AnimationPlayer + sprite sheet layout + animation GDScript
+// Creates CharacterBody2D scene with sprite display, collision, camera, and controller script
 import * as fs from "fs";
 import * as path from "path";
-import { createScene } from "./create_scene.js";
-import { addNode } from "./add_node.js";
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
 
 export interface GenerateAnimationArgs {
   /** Path to Godot project root */
   project_path: string;
   /** Character name (used for filename) */
   name?: string;
-  /** Sprite sheet frame width in pixels (default: 32) */
-  frame_width?: number;
-  /** Sprite sheet frame height in pixels (default: 48) */
-  frame_height?: number;
+  /** Path to sprite image PNG (relative to project root, e.g. "assets/sprites/my_char.png") */
+  sprite_path?: string;
+  /** Sprite region rect in the image: "x,y,w,h" to crop one frame from a sprite sheet (optional) */
+  region?: string;
+  /** Sprite scale (default: auto-calculated or 0.25) */
+  scale?: number;
   /** Animations to generate */
   animations?: string;
   /** Include idle animation (default: true) */
@@ -34,12 +32,17 @@ export interface GenerateAnimationArgs {
 
 /**
  * Generate a complete character animation system for Godot.
- * Creates AnimatedSprite2D with sprite sheet, AnimationPlayer, and controller script.
+ * Creates a fully configured .tscn with Sprite2D (or AnimatedSprite2D),
+ * CollisionShape2D, Camera2D, and a controller script.
+ *
+ * CRITICAL FIX: This tool now writes a COMPLETE, runnable .tscn file.
+ * Previous version used addNode() which left nodes unconfigured (no sprite,
+ * no shape, no camera). Every property is now explicitly set.
  */
 export function generateAnimation(args: GenerateAnimationArgs): string {
   const {
     project_path, name = "character",
-    frame_width = 32, frame_height = 48,
+    sprite_path, region, scale,
     idle = true, walk = true, run = false,
     crouch = false, turn = false, jump = false,
   } = args;
@@ -49,201 +52,157 @@ export function generateAnimation(args: GenerateAnimationArgs): string {
 
   const sceneDir = path.resolve(project_path, "scenes", "characters");
   const scriptDir = path.resolve(project_path, "scripts", "characters");
-  if (!fs.existsSync(sceneDir)) fs.mkdirSync(sceneDir, { recursive: true });
-  if (!fs.existsSync(scriptDir)) fs.mkdirSync(scriptDir, { recursive: true });
+  const spriteDir = path.resolve(project_path, "assets", "spritesheets");
+  fs.mkdirSync(sceneDir, { recursive: true });
+  fs.mkdirSync(scriptDir, { recursive: true });
+  if (!fs.existsSync(spriteDir)) fs.mkdirSync(spriteDir, { recursive: true });
 
   const scenePath = path.resolve(sceneDir, `${name}.tscn`);
   const scriptPath = path.resolve(scriptDir, `${name}.gd`);
 
-  // ── Calculate sprite sheet layout ──
-  interface AnimDef { name: string; frames: number; fps: number; loop: boolean; hframes: number; }
-  const animDefs: AnimDef[] = [];
+  // ── Parse region rect if provided ──
+  let regionRectStr = "";
+  let regionEnabled = false;
+  let effectiveScale = scale || 0.25;
 
-  if (idle) animDefs.push({ name: "idle", frames: 4, fps: 4, loop: true, hframes: 4 });
-  if (walk) animDefs.push({ name: "walk", frames: 4, fps: 8, loop: true, hframes: 4 });
-  if (run) animDefs.push({ name: "run", frames: 4, fps: 12, loop: true, hframes: 4 });
-  if (crouch) animDefs.push({ name: "crouch", frames: 2, fps: 4, loop: false, hframes: 2 });
-  if (turn) animDefs.push({ name: "turn", frames: 3, fps: 6, loop: false, hframes: 3 });
-  if (jump) animDefs.push({ name: "jump", frames: 3, fps: 6, loop: false, hframes: 3 });
+  if (region) {
+    const parts = region.split(",").map(s => parseFloat(s.trim()));
+    if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+      regionRectStr = `region_enabled = true\nregion_rect = Rect2(${parts[0]}, ${parts[1]}, ${parts[2]}, ${parts[3]})`;
+      regionEnabled = true;
+      // Auto-calculate scale so the cropped region displays at ~80-100px
+      const cropW = parts[2];
+      effectiveScale = scale || Math.min(90 / cropW, 0.3);
+    }
+  }
 
-  const totalFrames = animDefs.reduce((sum, a) => sum + a.frames, 0);
-  const sheetWidth = 1024;
-  const sheetHeight = 1024;
-  const cols = Math.ceil(Math.sqrt(totalFrames));
-  const rows = Math.ceil(totalFrames / cols);
-  const cellW = sheetWidth / cols;
-  const cellH = sheetHeight / rows;
+  // ── Determine sprite node type ──
+  // If we have a sprite path, use Sprite2D with optional region cropping
+  // If no sprite, still create the node structure (user adds art later)
+  const hasSprite = !!sprite_path;
+  const spriteResId = hasSprite ? "2" : ""; // ext_resource id for texture
 
-  // ── GDScript controller ──
+  // ── Build .tscn file DIRECTLY (complete control over every property) ──
+  const loadSteps = hasSprite ? 5 : 3; // Script + Texture + Shape + (maybe nothing else)
+
+  const tscnLines: string[] = [
+    `[gd_scene load_steps=${loadSteps} format=3 uid="uid://${name}_scene"]`,
+    ``,
+    `[ext_resource type="Script" path="res://scripts/characters/${name}.gd" id="1"]`,
+  ];
+
+  if (hasSprite) {
+    tscnLines.push(
+      `[ext_resource type="Texture2D" path="res://${sprite_path}" id="2"]`,
+      ``
+    );
+  }
+
+  // Sub-resource: collision shape
+  tscnLines.push(
+    `[sub_resource type="RectangleShape2D" id="CollisionShape"]`,
+    `size = Vector2(40, 72)`,
+    ``
+  );
+
+  // Root node: CharacterBody2D
+  tscnLines.push(
+    `[node name="${name}" type="CharacterBody2D"]`,
+    `script = ExtResource("1")`
+  );
+
+  // Sprite node
+  if (hasSprite) {
+    tscnLines.push(
+      ``,
+      `[node name="Sprite2D" type="Sprite2D" parent="."]`,
+      `texture = ExtResource("${spriteResId}")`,
+      ...regionRectStr.split("\n").filter(l => l.trim()),
+      `scale = Vector2(${effectiveScale}, ${effectiveScale})`
+    );
+  }
+
+  // Collision shape
+  tscnLines.push(
+    ``,
+    `[node name="CollisionShape2D" type="CollisionShape2D" parent="."]`,
+    `shape = SubResource("CollisionShape")`,
+    `position = Vector2(0, -10)`
+  );
+
+  // Camera (so the demo is immediately viewable)
+  // Uses smooth follow + offset so character movement is visible
+  tscnLines.push(
+    ``,
+    `[node name="Camera2D" type="Camera2D" parent="."]`,
+    `position_smoothing_enabled = true`,
+    `position_smoothing_speed = 4.0`,
+    `offset = Vector2(0, -30)`
+  );
+
+  fs.writeFileSync(scenePath, tscnLines.join("\n"), "utf-8");
+
+  // ── GDScript controller (works with OR without sprite) ──
+  const spriteNodeName = hasSprite ? "$Sprite2D" : "$AnimatedSprite2D";
   const gdscript = [
     `extends CharacterBody2D`,
     ``,
-    `@onready var anim: AnimatedSprite2D = $AnimatedSprite2D`,
-    ``,
-    `# Movement`,
+    `# Movement config`,
     `@export var speed: float = 100.0`,
-    `@export var run_speed: float = 180.0`,
-    `@export var crouch_speed: float = 40.0`,
+    `@export var gravity: float = 600.0`,
     ``,
     `var _facing_right: bool = true`,
     ``,
     `func _ready() -> void:`,
-    `\tanim.play("idle")`,
+    `\tpass`,
     ``,
-    `func _physics_process(_delta: float) -> void:`,
-    `\tvar dir := Vector2.ZERO`,
-    `\tdir.x = Input.get_axis("ui_left", "ui_right")`,
-    `\tdir.y = Input.get_axis("ui_up", "ui_down")`,
-    `\t`,
-    `\t# Crouch`,
-    `\tif Input.is_action_pressed("ui_down"):`,
-    `\t\t${crouch ? 'anim.play("crouch")' : ""}`,
-    `\t\tvelocity = dir.normalized() * crouch_speed`,
-    `${run ? '\t# Run (Shift held)\n\telif Input.is_action_pressed("ui_accept"):\n\t\tanim.play("run")\n\t\tvelocity = dir.normalized() * run_speed' : ""}`,
-    `\t# Walk`,
-    `\telif dir.length() > 0:`,
-    `\t\t${walk ? 'anim.play("walk")' : 'anim.play("idle")'}`,
-    `\t\tvelocity = dir.normalized() * speed`,
-    `\t# Idle`,
-    `\telse:`,
-    `\t\t${idle ? 'anim.play("idle")' : ""}`,
-    `\t\tvelocity = Vector2.ZERO`,
-    `\t`,
-    `\t# Flip sprite based on direction`,
-    `\tif dir.x != 0:`,
-    `\t\t_facing_right = dir.x > 0`,
-    `\t\tanim.scale.x = 1 if _facing_right else -1`,
-    `\t`,
-    `\t# Jump`,
-    `\tif Input.is_action_just_pressed("ui_accept") and is_on_floor():`,
-    `\t\tvelocity.y = -300.0`,
-    `\t\t${jump ? 'anim.play("jump")' : ""}`,
-    `\t`,
+    `func _physics_process(delta: float) -> void:`,
+    `\t# Gravity`,
+    `\tif not is_on_floor():`,
+    `\t\tvelocity.y += gravity * delta`,
+    ``,
+    `\t# Override this method in subclass or replace script for custom behavior`,
+    `\tmovement_logic(delta)`,
     `\tmove_and_slide()`,
     ``,
+    `# Base movement — override for AI / player input / etc.`,
+    `func movement_logic(_delta: float) -> void:`,
+    `\tvar dir := Vector2.ZERO`,
+    `\tdir.x = Input.get_axis("ui_left", "ui_right")`,
+    ``,
+    `\tif dir.length() > 0:`,
+    `\t\tvelocity.x = dir.x * speed`,
+    `\t\t_facing_right = dir.x > 0`,
+    `\t\t${hasSprite ? `_update_sprite_flip()` : 'anim.scale.x = 1 if _facing_right else -1'}`,
+    `\telse:`,
+    `\t\tvelocity.x = move_toward(velocity.x, 0, speed * _delta * 5)`,
+    ``,
+    `# Flip sprite when direction changes`,
+    `func _update_sprite_flip() -> void:`,
+    `\t${hasSprite ? `$Sprite2D.scale.x = ${effectiveScale} if _facing_right else -$effectiveScale` : `pass`}`,
+    ``,
   ].join("\n");
+
   fs.writeFileSync(scriptPath, gdscript, "utf-8");
-
-  // ── Create scene ──
-  createScene({ scene_path: scenePath, root_node_name: name, root_node_type: "CharacterBody2D", project_path });
-
-  const scene = parseTscnFile(scenePath);
-
-  // Add script ext_resource
-  const scriptResPath = `res://scripts/characters/${name}.gd`;
-  scene.extResources.push({ id: "1", type: "Script", path: scriptResPath });
-
-  // Add AnimatedSprite2D as ext_resource (it's a built-in type, no ext_resource needed)
-  // But we need it as a child node
-  if (scene.rootNode) {
-    scene.rootNode.properties = scene.rootNode.properties || {};
-    scene.rootNode.properties.script = `ExtResource("1")`;
-  }
-
-  writeSceneToFile(scene, scenePath);
-
-  // Now add AnimatedSprite2D
-  addNode({ scene_path: scenePath, parent_node_name: name, node_type: "AnimatedSprite2D", node_name: "AnimatedSprite2D" });
-
-  // Add CollisionShape2D
-  addNode({ scene_path: scenePath, parent_node_name: name, node_type: "CollisionShape2D", node_name: "CollisionShape2D" });
-
-  // ── Generate sprite sheet placeholder SVG ──
-  const spriteDir = path.resolve(project_path, "assets", "spritesheets");
-  if (!fs.existsSync(spriteDir)) fs.mkdirSync(spriteDir, { recursive: true });
-  const sheetPath = path.join(spriteDir, `${name}_sheet.svg`);
-
-  // Generate a placeholder sprite sheet showing frame layout
-  const svgLines: string[] = [
-    `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${sheetWidth}" height="${sheetHeight}" viewBox="0 0 ${sheetWidth} ${sheetHeight}">`,
-    `<rect width="${sheetWidth}" height="${sheetHeight}" fill="#333"/>`,
-    // Grid lines
-    ...(() => {
-      const lines: string[] = [];
-      for (let c = 0; c <= cols; c++) {
-        const x = c * cellW;
-        lines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${sheetHeight}" stroke="#555" stroke-width="1"/>`);
-      }
-      for (let r = 0; r <= rows; r++) {
-        const y = r * cellH;
-        lines.push(`<line x1="0" y1="${y}" x2="${sheetWidth}" y2="${y}" stroke="#555" stroke-width="1"/>`);
-      }
-      return lines;
-    })(),
-    // Frame labels
-    ...animDefs.reduce((lines, anim, ai) => {
-      const startFrame = animDefs.slice(0, ai).reduce((s, a) => s + a.frames, 0);
-      for (let f = 0; f < anim.frames; f++) {
-        const idx = startFrame + f;
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const cx = col * cellW + cellW / 2;
-        const cy = row * cellH + cellH / 2;
-        lines.push(
-          `<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#888" font-size="14" font-family="monospace">${anim.name}</text>`,
-          `<text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="#666" font-size="12" font-family="monospace">frame ${f + 1}/${anim.frames}</text>`
-        );
-      }
-      return lines;
-    }, [] as string[]),
-    `</svg>`,
-  ];
-  fs.writeFileSync(sheetPath, svgLines.join("\n"), "utf-8");
-
-  // ── Generate sprite sheet configuration file ──
-  const sheetConfig = [
-    `# Sprite Sheet config for ${name}`,
-    `# Generated by godot-mcp-server`,
-    `# Replace the placeholder spritesheet with actual frames`,
-    ``,
-    `[sheet]`,
-    `path = "res://assets/spritesheets/${name}_sheet.png"`,
-    `frame_width = ${frame_width}`,
-    `frame_height = ${frame_height}`,
-    `columns = ${cols}`,
-    `rows = ${rows}`,
-    ``,
-    `# Animation frames (0-indexed within the sheet)`,
-    animDefs.map(a => {
-      const startFrame = animDefs.slice(0, animDefs.indexOf(a)).reduce((s, ad) => s + ad.frames, 0);
-      const frames = Array.from({ length: a.frames }, (_, i) => startFrame + i).join(", ");
-      return `[animation.${a.name}]\nframes = [${frames}]\nfps = ${a.fps}\nloop = ${a.loop ? "true" : "false"}`;
-    }).join("\n\n"),
-    ``,
-  ].join("\n");
-  fs.writeFileSync(path.join(spriteDir, `${name}_sheet.cfg`), sheetConfig, "utf-8");
 
   return [
     `Generated animation system: ${name}`,
     `  Scene: scenes/characters/${name}.tscn`,
     `  Script: scripts/characters/${name}.gd`,
-    `  Sprite sheet: assets/spritesheets/${name}_sheet.svg (placeholder)`,
-    `  Config: assets/spritesheets/${name}_sheet.cfg`,
+    ...(hasSprite ? [
+      `  Sprite: res://${sprite_path}`,
+      ...(regionEnabled ? [`  Region: ${region}`] : []),
+      `  Scale: ${effectiveScale}`,
+    ] : [
+      `  ⚠ No sprite image assigned — add one in Godot editor or pass sprite_path`,
+    ]),
     ``,
-    `Animations:`,
-    animDefs.map(a => `  ${a.name}: ${a.frames} frame(s) @ ${a.fps} fps ${a.loop ? "(loop)" : ""}`).join("\n"),
+    `Nodes created:`,
+    hasSprite
+      ? `  CharacterBody2D → Sprite2D (texture + region) + CollisionShape2D + Camera2D`
+      : `  CharacterBody2D → [add Sprite2D] + CollisionShape2D (configured) + Camera2D`,
     ``,
-    `Total frames: ${totalFrames}`,
-    `Sheet layout: ${cols}x${rows} grid (${cellW.toFixed(0)}x${cellH.toFixed(0)}px per frame)`,
-    ``,
-    `How to add art:`,
-    `  1. Use generate_sprite to create a character image`,
-    `  2. In an image editor, create a sprite sheet following the grid:`,
-    animDefs.reduce((lines, a) => {
-      const startFrame = animDefs.slice(0, animDefs.indexOf(a)).reduce((s, ad) => s + ad.frames, 0);
-      const endFrame = startFrame + a.frames - 1;
-      const startCol = startFrame % cols;
-      const startRow = Math.floor(startFrame / cols);
-      const endCol = endFrame % cols;
-      const endRow = Math.floor(endFrame / cols);
-      lines.push(`     ${a.name}: cells (${startCol},${startRow}) to (${endCol},${endRow}) — ${a.frames} frames`);
-      return lines;
-    }, [] as string[]).join("\n"),
-    `  3. Save as PNG in assets/spritesheets/${name}_sheet.png`,
-    `  4. In Godot, set AnimatedSprite2D > SpriteFrames to use the sheet`,
-    `  5. Define each animation's frames in the SpriteFrames editor`,
-    ``,
-    `Controls: Arrow keys to move, Shift to run, Down to crouch, Space to jump`,
+    `The script provides movement_logic() override point.`,
+    `Replace it for AI behavior, player input, or other logic.`,
   ].join("\n");
 }

@@ -520,14 +520,14 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "generate_sprite",
-      description: "Generate a character sprite image using AI. Describe what you want in natural language and it will generate a pixel-art game sprite.",
+      description: "Generate a character portrait/illustration using AI. BEST FOR: RPG dialogue portraits, character select screens, cutscene art. NOT for animated game sprites — ImageGen produces static illustrations, not multi-frame sprite sheets. For animated character demo, use demo_character tool instead (it creates a geometric placeholder that moves).",
       inputSchema: {
         type: "object",
         properties: {
           output_path: { type: "string", description: "Output directory" },
           name: { type: "string", description: "Character name (filename)" },
           description: { type: "string", description: "Describe the character you want, e.g. 'a gothic girl with white hair and red eyes, dark dress, holding a staff'" },
-          style: { type: "string", enum: ["pixel-art", "portrait", "concept-art"], description: "Art style (default: pixel-art)" },
+          style: { type: "string", enum: ["portrait", "pixel-art", "concept-art"], description: "Art style (default: portrait — best for dialogue UI). pixel-art is still a static sprite, not animated frames." },
           width: { type: "number", description: "Image width (default: 1024)" },
           height: { type: "number", description: "Image height (default: 1024)" },
           transparent: { type: "boolean", description: "Transparent background (default: true)" },
@@ -537,14 +537,15 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "generate_animation",
-      description: "Generate a complete character animation system: scene + AnimatedSprite2D + sprite sheet layout + GDScript controller. Supports idle, walk, run, crouch, turn, jump.",
+      description: "Generate a complete character animation system: scene + Sprite2D (with optional region crop) + CollisionShape2D + Camera2D + GDScript controller. Creates a fully runnable .tscn file.",
       inputSchema: {
         type: "object",
         properties: {
           project_path: { type: "string", description: "Path to Godot project root" },
           name: { type: "string", description: "Character name" },
-          frame_width: { type: "number", description: "Frame width in pixels (default: 32)" },
-          frame_height: { type: "number", description: "Frame height in pixels (default: 48)" },
+          sprite_path: { type: "string", description: "Path to sprite PNG relative to project root (e.g. assets/sprites/char.png)" },
+          region: { type: "string", description: 'Region rect to crop one frame from sprite sheet: "x,y,w,h"' },
+          scale: { type: "number", description: "Sprite display scale (default: auto-calculated)" },
           idle: { type: "boolean", description: "Include idle animation (default: true)" },
           walk: { type: "boolean", description: "Include walk animation (default: true)" },
           run: { type: "boolean", description: "Include run animation (default: false)" },
@@ -557,15 +558,15 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "demo_character",
-      description: "One-command demo: generate a character with AI behavior (wander/patrol), set as main scene, and run in Godot. See the character move by itself.",
+      description: "One-command demo: generate a complete playable scene with character, AI behavior, ground, background. The character moves autonomously. WHEN NO SPRITE_PATH IS PROVIDED: creates a visible geometric placeholder (colored rectangle body + head) so you can ALWAYS see it moving. Best for testing AI behavior or when you don't have game sprites. Pass sprite_path and region for custom portrait display.",
       inputSchema: {
         type: "object",
         properties: {
           project_path: { type: "string", description: "Path to Godot project (created if missing)" },
           name: { type: "string", description: "Character name (default: demo_char)" },
+          sprite_path: { type: "string", description: "Path to sprite PNG relative to project root" },
+          region: { type: "string", description: 'Region rect "x,y,w,h" to crop one frame from sheet' },
           behavior: { type: "string", enum: ["wander", "patrol", "idle"], description: "AI behavior (default: wander)" },
-          frame_width: { type: "number", description: "Frame width (default: 32)" },
-          frame_height: { type: "number", description: "Frame height (default: 48)" },
         },
         required: ["project_path"],
       },
@@ -913,8 +914,9 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     return { content: [{ type: "text", text: generateAnimation({
       project_path: projectPath,
       name: args?.name as string | undefined,
-      frame_width: args?.frame_width as number | undefined,
-      frame_height: args?.frame_height as number | undefined,
+      sprite_path: args?.sprite_path as string | undefined,
+      region: args?.region as string | undefined,
+      scale: args?.scale as number | undefined,
       idle: args?.idle as boolean | undefined,
       walk: args?.walk as boolean | undefined,
       run: args?.run as boolean | undefined,
@@ -928,7 +930,13 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
   if (name === "demo_character") {
     const projectPath = args?.project_path as string;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: demoCharacter({ project_path: projectPath, name: args?.name as string | undefined, behavior: args?.behavior as "wander" | "patrol" | "idle" | undefined, frame_width: args?.frame_width as number | undefined, frame_height: args?.frame_height as number | undefined }) }] };
+    return { content: [{ type: "text", text: demoCharacter({
+      project_path: projectPath,
+      name: args?.name as string | undefined,
+      sprite_path: args?.sprite_path as string | undefined,
+      region: args?.region as string | undefined,
+      behavior: args?.behavior as "wander" | "patrol" | "idle" | undefined,
+    }) }] };
   }
 
   // --- run_project ---

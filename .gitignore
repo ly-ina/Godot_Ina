@@ -66,5 +66,8 @@ LPT1
 LPT2
 LPT3
 
+# Godot editor cache (generated per-machine, not shared)
+.godot/
+
 # Accidentals
 *.exe

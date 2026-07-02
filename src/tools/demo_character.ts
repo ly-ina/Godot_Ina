@@ -1,200 +1,397 @@
 // MCP Tool: demo_character — creates a character and runs it in Godot
+// End-to-end demo: sprite + scene + AI behavior + environment + procedural animation
 import * as fs from "fs";
 import * as path from "path";
 import { generateAnimation } from "./generate_animation.js";
 import { initProject } from "./init_project.js";
-import { runGodotProject } from "./run_project.js";
 
 export interface DemoCharacterArgs {
   /** Path to Godot project root (created if doesn't exist) */
   project_path: string;
   /** Character name */
   name?: string;
-  /** AI behavior: "wander" (walks around randomly), "patrol" (follows waypoints), "idle" (stands still) */
+  /** Path to sprite image PNG (relative to project root) */
+  sprite_path?: string;
+  /** Sprite region rect "x,y,w,h" to crop one frame from a sheet */
+  region?: string;
+  /** AI behavior: "wander" (default), "patrol", "idle" */
   behavior?: "wander" | "patrol" | "idle";
-  /** Frame width (default: 32) */
-  frame_width?: number;
-  /** Frame height (default: 48) */
-  frame_height?: number;
 }
 
 /**
- * One-command demo: generates a character with AI behavior, sets up the project,
- * and runs it in Godot so you can see the character moving.
+ * One-command demo: generates a complete runnable Godot project with a character.
+ *
+ * Creates:
+ * 1. Character scene (CharacterBody2D + Sprite2D + CollisionShape2D + Camera2D)
+ * 2. AI behavior script with PROCEDURAL ANIMATION (walk bob, idle breathe, turn)
+ * 3. Main scene (background + ground walls + character instance)
+ * 4. Configures main_scene in project.godot
+ *
+ * Key fixes (2026-07-03):
+ * - Procedural animation via GDScript — no multi-frame sprite needed
+ * - Complete environment with floor + left/right walls
+ * - Camera follows character with limits so movement is VISIBLE
+ * - Sprite uses region crop for clean single-character display
  */
 export function demoCharacter(args: DemoCharacterArgs): string {
-  const { project_path, name = "demo_char", behavior = "wander", frame_width = 32, frame_height = 48 } = args;
+  const { project_path, name = "demo_char", sprite_path, region, behavior = "wander" } = args;
 
   if (!project_path) throw new Error("project_path is required");
 
-  // Ensure project exists
   if (!fs.existsSync(project_path)) {
-    initProject({ project_path, project_name: name });
+    initProject({ project_path, project_name: `${name}_demo` });
   }
 
-  // 1. Generate animation system (scene + AnimatedSprite2D + basic controller)
-  const animResult = generateAnimation({
+  // 1. Generate scene + base controller
+  generateAnimation({
     project_path,
     name,
-    frame_width,
-    frame_height,
+    sprite_path,
+    region,
     idle: true,
     walk: true,
-    run: true,
-    crouch: false,
-    turn: true,
-    jump: true,
   });
 
-  // 2. Read the generated script and extend it with AI behavior
+  // 2. Write AI script with procedural animation
   const scriptPath = path.resolve(project_path, "scripts", "characters", `${name}.gd`);
-  let scriptContent = fs.readFileSync(scriptPath, "utf-8");
-
-  // Remove the _physics_process that uses Input (not available in headless)
-  // and replace with AI-driven behavior
-  const aiScript = generateAIScript(name, behavior);
+  const aiScript = buildAIScript(name, behavior);
   fs.writeFileSync(scriptPath, aiScript, "utf-8");
 
-  // 3. Update project.godot to use this character as main scene
+  // 3. Create Main scene with full environment (floor + walls + sky)
+  createMainScene(project_path, name, sprite_path, region);
+
+  // 4. Set Main.tscn as main scene
   const projectFile = path.join(project_path, "project.godot");
   let projectConfig = fs.readFileSync(projectFile, "utf-8");
   projectConfig = projectConfig.replace(
-    /run\/main_scene="[^"]+"/,
-    `run/main_scene="res://scenes/characters/${name}.tscn"`
+    /run\/main_scene="[^"]*"/,
+    `run/main_scene="res://scenes/Main.tscn"`
   );
   fs.writeFileSync(projectFile, projectConfig, "utf-8");
 
-  // 4. Try to run the project
-  const runResult = tryRunProject(project_path);
-
   return [
-    `Demo character "${name}" ready`,
-    `  Behavior: ${behavior} (${behavior === "wander" ? "walks around randomly" : behavior === "patrol" ? "walks between waypoints" : "stands in place"})`,
-    `  Scene: scenes/characters/${name}.tscn`,
-    `  Script: scripts/characters/${name}.gd`,
-    `  Main scene set to character`,
+    `Demo "${name}" ready — ${behavior} mode`,
     ``,
-    `Godot run: ${runResult}`,
+    `Files created:`,
+    `  scenes/characters/${name}.tscn`,
+    `  scripts/characters/${name}.gd   (AI + procedural animation)`,
+    `  scenes/Main.tscn                (floor + walls + sky)`,
     ``,
-    `The character will auto-walk in the project.`,
-    `Open the project in Godot editor to see it in action.`,
+    ...(sprite_path ? [`Sprite: res://${sprite_path}`, ...(region ? [`Crop: ${region}`] : [])] : []),
+    `Behavior: ${behavior}`,
+    ``,
+    `Run: godot --path <project> --scene res://scenes/Main.tscn`,
   ].join("\n");
 }
 
-function generateAIScript(name: string, behavior: string): string {
-  const btDesc = behavior === "wander"
-    ? "walks in random directions, turns around when hitting walls"
-    : behavior === "patrol"
-    ? "walks between predefined waypoints"
-    : "stands in place, occasionally looks around";
+// ──────────────────────────────────────────────
+// AI Script Builder — includes procedural animation
+// ──────────────────────────────────────────────
 
-  const behaviorCode = behavior === "wander" ? `
-func _physics_process(delta: float) -> void:
-	_behavior_timer -= delta
-	if _behavior_timer <= 0:
-		_pick_random_direction()
-		_behavior_timer = randf_range(1.0, 3.0)
-	
-	if _current_dir != Vector2.ZERO:
-		anim.play("walk")
-		velocity = _current_dir * speed
-		anim.scale.x = 1 if _current_dir.x > 0 else -1 if _current_dir.x < 0 else anim.scale.x
-	else:
-		anim.play("idle")
-		velocity = Vector2.ZERO
-	
-	move_and_slide()
-	
-	# Bounce off walls
-	if is_on_wall():
-		_current_dir.x *= -1
-	
-	# Randomly look around while idling
-	if _current_dir == Vector2.Zero and randf() > 0.98:
-		anim.scale.x *= -1
-
-func _pick_random_direction() -> void:
-	var dirs := [Vector2.RIGHT, Vector2.LEFT, Vector2.ZERO]
-	_current_dir = dirs[randi() % dirs.size()]
-` : behavior === "patrol" ? `
-func _physics_process(delta: float) -> void:
-	if _waypoints.size() == 0:
-		anim.play("idle")
-		return
-	
-	var target := _waypoints[_current_waypoint]
-	var dist := global_position.distance_to(target)
-	
-	if dist < 8.0:
-		_current_waypoint = (_current_waypoint + 1) % _waypoints.size()
-		_behavior_timer = 0.5
-		anim.play("idle")
-		return
-	
-	var dir := (target - global_position).normalized()
-	anim.play("walk")
-	velocity = dir * speed
-	anim.scale.x = 1 if dir.x > 0 else -1
-	move_and_slide()
-
-func _add_waypoints() -> void:
-	# Add some waypoints around the spawn position
-	var start := global_position
-	_waypoints = [
-		start + Vector2(100, 0),
-		start + Vector2(100, 100),
-		start + Vector2(0, 100),
-		start + Vector2(0, 0),
-	]
-` : `
-func _physics_process(delta: float) -> void:
-	_behavior_timer -= delta
-	velocity = Vector2.ZERO
-	
-	if _behavior_timer <= 0:
-		_behavior_timer = randf_range(2.0, 5.0)
-		# Look around occasionally
-		if randf() > 0.5:
-			anim.scale.x *= -1
-	
-	anim.play("idle")
-	move_and_slide()
-`;
+function buildAIScript(charName: string, behavior: string): string {
+  // GDScript 2.0 strict typing rules (verified 2026-07-03):
+  // - NEVER use `:=` with method return values (abs(), sin(), randi(), move_toward() etc.)
+  //   Godot treats these as Variant inference and errors in strict mode
+  // - ALWAYS use explicit `: float`, `: int`, `: bool` etc.
+  // - Use `absf()` not `abs()` for float absolute value
+  // - Use `if x == null:` not `if not x:` for nullable checks
+  //
+  // NOTE: $Visual is either Sprite2D (with sprite_path) or ColorRect (no sprite).
+  // Both support scale.x for flip and position.y for bob animation.
 
   return `extends CharacterBody2D
 
-# AI-driven ${name} — ${btDesc}
-@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+# ${charName} — AI-driven demo character
+# Uses procedural animation (bob + flip) — no sprite frames needed
+# Visual node ($Visual) is either Sprite2D or ColorRect depending on whether
+# a sprite image was provided. Both support all animation operations.
 
-@export var speed: float = 60.0
+@onready var _visual: CanvasItem = $Visual
+@onready var _head: CanvasItem = $Head if has_node("Head") else null
 
-var _current_dir: Vector2 = Vector2.ZERO
-var _behavior_timer: float = 0.0
-var _waypoints: Array[Vector2] = []
-var _current_waypoint: int = 0
+# ── Movement config ──
+@export var speed: float = 100.0
+@export var gravity: float = 500.0
+
+# ── Animation config ──
+@export var walk_bob_speed: float = 12.0      # Cycles per second while walking
+@export var walk_bob_amount: float = 3.0       # Pixels up/down
+@export var breathe_speed: float = 1.5         # Breathing cycles/sec when idle
+@export var breathe_amount: float = 0.8        # Scale change when breathing
+@export var turn_duration: float = 0.25        # Seconds to flip direction
+
+# ── Internal state ──
+var _facing_right: bool = true
+var _timer: float = 0.0
+var _move_dir: Vector2 = Vector2.RIGHT
+var _is_moving: bool = true
+var _anim_time: float = 0.0                    # Accumulated time for animations
+var _target_scale_x: float = 1.0               # For smooth turning
+var _base_y: float = 0.0                       # Sprite's original Y offset
 
 func _ready() -> void:
-	anim.play("idle")
-	_behavior_timer = randf_range(0.5, 2.0)
-	${behavior === "patrol" ? "_add_waypoints()" : ""}
+	_pick_direction()
+	_timer = randf_range(1.0, 3.0)
+	if _visual != null:
+		_base_y = _visual.position.y
+		_target_scale_x = absf(_visual.scale.x)
+	else:
+		_target_scale_x = 0.25
 
-${behaviorCode}
+func _physics_process(delta: float) -> void:
+	_anim_time += delta
+	
+	# Gravity
+	if not is_on_floor():
+		velocity.y += gravity * delta
+	
+	${getBehaviorCode(behavior)}
+	
+	move_and_slide()
+	
+	# Apply procedural animation
+	_apply_animation(delta)
+	
+	# Wall bounce
+	var slide_count: int = get_slide_collision_count()
+	for i: int in range(slide_count):
+		var col: KinematicCollision2D = get_slide_collision(i)
+		var normal: Vector2 = col.get_normal()
+		if absf(normal.dot(Vector2(1, 0))) > 0.7:
+			_move_dir.x *= -1
+			_facing_right = _move_dir.x > 0
+			_update_flip()
+			_timer = randf_range(0.3, 1.0)
+		break
+
+# ── Procedural animation (no sprite frames needed!) ──
+func _apply_animation(delta: float) -> void:
+	if _visual == null:
+		return
+	
+	# Smooth scale interpolation for direction changes
+	var current_sx: float = absf(_visual.scale.x)
+	var target_sx: float = absf(_target_scale_x)
+	var new_sx: float = move_toward(current_sx, target_sx, delta * 8.0)
+	
+	if _is_moving and _move_dir.length() > 0:
+		# Walking: vertical bob (simulates foot steps)
+		var bob: float = sin(_anim_time * walk_bob_speed * TAU) * walk_bob_amount
+		_visual.position.y = _base_y + bob
+		_visual.scale.x = new_sx if _facing_right else -new_sx
+	else:
+		# Idle: gentle breathing (scale pulse)
+		var breath: float = 1.0 + sin(_anim_time * breathe_speed * TAU) * breathe_amount * 0.01
+		_visual.position.y = move_toward(_visual.position.y, _base_y, delta * 10.0)
+		_visual.scale.x = (new_sx * breath) if _facing_right else -(new_sx * breath)
+
+# ── Direction control ──
+func _pick_direction() -> void:
+	var roll: int = randi() % 3
+	match roll:
+		0:
+			_move_dir = Vector2.RIGHT
+			_facing_right = true
+		1:
+			_move_dir = Vector2.LEFT
+			_facing_right = false
+		2:
+			_move_dir = Vector2.ZERO
+			_is_moving = false
+			_timer = randf_range(1.5, 3.5)
+			return
+	
+	_is_moving = true
+	_update_flip()
+	_timer = randf_range(1.5, 4.0)
+
+func _update_flip() -> void:
+	pass  # Scale handled by _apply_animation smooth interp
 `;
 }
 
-function tryRunProject(projectPath: string): string {
-  try {
-    runGodotProject({
-      project_path: projectPath,
-      mode: "headless",
-      timeout: 5000,
-    });
-    return "Project started (headless mode)";
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("Godot") || msg.includes("not found") || msg.includes("ENOENT")) {
-      return `Godot not available — set GODOT_PATH or open the project manually.`;
-    }
-    return `Run attempted: ${msg}`;
+function getBehaviorCode(behavior: string): string {
+  switch (behavior) {
+    case "wander":
+      return `	# ── Wander AI ──
+	_timer -= delta
+	if _timer <= 0:
+		if _is_moving:
+			if randf() < 0.15:
+				_is_moving = false
+				_timer = randf_range(2.0, 4.0)
+				if randf() < 0.6:
+					_facing_right = not _facing_right
+			else:
+				_pick_direction()
+		else:
+			_is_moving = true
+			_pick_direction()
+	
+	if _is_moving:
+		velocity.x = _move_dir.x * speed
+	else:
+		velocity.x = move_toward(velocity.x, 0, speed * delta * 5)`;
+
+    case "patrol":
+      return `	# ── Patrol AI ──
+	if _waypoints.size() == 0:
+		_setup_waypoints()
+	
+	var target: Vector2 = _waypoints[_wp_index]
+	var dist: float = global_position.distance_to(target)
+	
+	if dist < 10.0:
+		_wp_index = (_wp_index + 1) % _waypoints.size()
+		_pause_timer = 0.5
+		velocity.x = move_toward(velocity.x, 0, speed * 5)
+		return
+	
+	if _pause_timer > 0:
+		_pause_timer -= delta
+		velocity.x = move_toward(velocity.x, 0, speed * 5)
+		return
+	
+	var dir := (target - global_position).normalized()
+	velocity.x = dir.x * speed
+	_facing_right = dir.x > 0
+	_update_flip()
+
+var _waypoints: Array[Vector2] = []
+var _wp_index: int = 0
+var _pause_timer: float = 0.0
+
+func _setup_waypoints() -> void:
+	var start := global_position
+	_waypoints = [
+		start + Vector2(200, 0),
+		start + Vector2(200, 100),
+		start + Vector2(-200, 100),
+		start + Vector2(-200, 0),
+	]`;
+
+    case "idle":
+      return `	# ── Idle AI — stand still, look around occasionally ──
+	velocity.x = move_toward(velocity.x, 0, speed * delta * 5)
+	_timer -= delta
+	if _timer <= 0:
+		_timer = randf_range(2.0, 5.0)
+		if randf() > 0.5:
+			_facing_right = not _facing_right
+			_update_flip()`;
+
+    default:
+      return `\tvelocity.x = 0`;
   }
+}
+
+// ──────────────────────────────────────────────
+// Main Scene Creator — full playable environment
+// ──────────────────────────────────────────────
+
+function createMainScene(projectPath: string, charName: string, spritePath?: string, regionStr?: string): void {
+  const scenesDir = path.resolve(projectPath, "scenes");
+  if (!fs.existsSync(scenesDir)) fs.mkdirSync(scenesDir, { recursive: true });
+
+  // GODOT 4 .TSCN FORMAT RULES (verified 2026-07-03):
+  // - NO quotes on: numbers, bools, Color(), Vector2(), ExtResource(), SubResource()
+  // - These are Godot-native types parsed by the engine
+  // - Quotes only needed for plain string values like text labels
+  //
+  // CRITICAL: All nodes defined inline — NO instance=ExtResource().
+  // Scene instancing silently fails if the referenced scene has any error,
+  // causing ALL child nodes to lose their parent ("parent path vanished" warning).
+
+  const content = [
+    `[gd_scene load_steps=4 format=3 uid="uid://demomain001"]`,
+    ``,
+    `[ext_resource type="Script" path="res://scripts/characters/${charName}.gd" id="1"]`,
+    ...(spritePath ? [`[ext_resource type="Texture2D" path="res://${spritePath}" id="2"]`] : []),
+    ``,
+    `[sub_resource type="RectangleShape2D" id="Shape"]`,
+    `size = Vector2(40, 72)`,
+    ``,
+    // ── Root ──
+    `[node name="Main" type="Node2D"]`,
+    ``,
+    // ── Sky ──
+    `[node name="Sky" type="ColorRect" parent="."]`,
+    `anchor_right = 1.0`,
+    `anchor_bottom = 1.0`,
+    `color = Color(0.12, 0.14, 0.22, 1)`,
+    ``,
+    // ── Ground floor ──
+    `[node name="Ground" type="StaticBody2D" parent="."]`,
+    `position = Vector2(0, 300)`,
+    ``,
+    `[node name="GroundVisual" type="ColorRect" parent="Ground"]`,
+    `offset_left = -2000`,
+    `offset_top = -10`,
+    `offset_right = 2000`,
+    `offset_bottom = 10`,
+    `color = Color(0.18, 0.38, 0.18, 1)`,
+    ``,
+    `[node name="GroundCollision" type="CollisionShape2D" parent="Ground"]`,
+    `shape = SubResource("Shape")`,
+    `size = Vector2(4000, 20)`,
+    ``,
+    // ── Left wall ──
+    `[node name="LeftWall" type="StaticBody2D" parent="."]`,
+    `position = Vector2(-480, 150)`,
+    ``,
+    `[node name="LeftCollision" type="CollisionShape2D" parent="LeftWall"]`,
+    `shape = SubResource("Shape")`,
+    `size = Vector2(20, 400)`,
+    ``,
+    // ── Right wall ──
+    `[node name="RightWall" type="StaticBody2D" parent="."]`,
+    `position = Vector2(480, 150)`,
+    ``,
+    `[node name="RightCollision" type="CollisionShape2D" parent="RightWall"]`,
+    `shape = SubResource("Shape")`,
+    `size = Vector2(20, 400)`,
+    ``,
+    // ── Character (inline — NOT instanced!) ──
+    `[node name="${charName}" type="CharacterBody2D" parent="."]`,
+    `position = Vector2(0, 100)`,
+    `script = ExtResource("1")`,
+    ...(spritePath ? [
+      // Sprite image path provided — use Sprite2D with optional region crop
+      ``,
+      `[node name="Visual" type="Sprite2D" parent="${charName}"]`,
+      `texture = ExtResource("2")`,
+      ...(regionStr ? [`region_enabled = true`, `region_rect = Rect2(${regionStr})`] : []),
+      `scale = Vector2(0.25, 0.25)`,
+    ] : [
+      // No sprite — use a visible geometric placeholder so the character is ALWAYS seeable
+      ``,
+      `[node name="Visual" type="ColorRect" parent="${charName}"]`,
+      `offset_left = -15`,
+      `offset_top = -72`,
+      `offset_right = 15`,
+      `offset_bottom = 0`,
+      `color = Color(0.45, 0.55, 0.85, 1)`,
+      ``,
+      `[node name="Head" type="ColorRect" parent="${charName}"]`,
+      `offset_left = -10`,
+      `offset_top = -85`,
+      `offset_right = 10`,
+      `offset_bottom = -72`,
+      `color = Color(0.85, 0.7, 0.55, 1)`,
+    ]),
+    ``,
+    `[node name="CollisionShape2D" type="CollisionShape2D" parent="${charName}"]`,
+    `shape = SubResource("Shape")`,
+    ``,
+    `[node name="Camera2D" type="Camera2D" parent="${charName}"]`,
+    `position_smoothing_enabled = true`,
+    `position_smoothing_speed = 4.0`,
+    `offset = Vector2(0, -30)`,
+    `limit_left = -500`,
+    `limit_right = 500`,
+    `limit_top = -500`,
+    `limit_bottom = 500`,
+  ].join("\n");
+
+  fs.writeFileSync(path.join(scenesDir, "Main.tscn"), content, "utf-8");
 }

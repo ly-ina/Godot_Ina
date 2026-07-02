@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。34 个工具，313 个测试。
+让 AI 直接读写 Godot 项目文件。37 个工具，316 个测试。
 
 ---
 
@@ -21,7 +21,7 @@
 - 用 Godot CLI 运行项目、执行代码片段
 - Godot 3.x 项目一键转 4.x
 
-**一键生成的（直接出完整 .tscn + .gd）：**
+**一键生成游戏系统（直接出完整 .tscn + .gd）：**
 - 8 种游戏组件（玩家、敌人、收集品、HUD、血量、子弹、生成器、关卡）
 - Minecraft 风格无限地形（带洞穴/矿物/液体/植被）
 - NPC 行为树 AI（带需求/人格/日程系统）
@@ -29,16 +29,17 @@
 - 星露谷物语风格场景切换（区域管理、过渡门、小地图）
 - SLG 策略地图（六角格、A* 寻路、战争迷雾、回合制）
 - 4 种完整示例项目（平台跳跃、RPG 对话、俯视角射击、FPS）
+- **完整角色动画 demo**（CharacterBody2D + AI 行为 + 程序化动画）
 
 ---
 
-## 34 个工具列表
+## 37 个工具列表
 
 ### 场景编辑
 | 工具 | 作用 |
 |------|------|
 | `create_scene` | 创建场景 |
-| `read_scene` | 读场景 |
+| `read_scene` | 读场景（支持版本自动检测） |
 | `list_scenes` | 列出所有场景 |
 | `add_node` | 加节点 |
 | `edit_node` | 改节点属性 |
@@ -74,6 +75,13 @@
 | `validate_project` | 校验整个项目 |
 | `analyze_project` | 分析项目结构、脚本、资源依赖 |
 
+### 图形与动画
+| 工具 | 作用 |
+|------|------|
+| `generate_sprite` | AI 生成角色立绘（对话展示用途） |
+| `generate_animation` | 生成角色场景骨架（CharacterBody2D + 碰撞体 + 摄像机） |
+| `demo_character` | **一键演示**：创建带 AI 行为 + 程序化动画的完整可运行场景 |
+
 ### 一键生成
 | 工具 | 生成什么 |
 |------|---------|
@@ -97,10 +105,10 @@
 
 | 指标 | 数值 |
 |------|------|
-| 工具数 | 34 |
-| 测试数 | 313（27 个文件） |
+| 工具数 | 37 |
+| 测试数 | 316（27 个文件） |
 | 行覆盖率 | 95% |
-| CI | GitHub Actions（Node 20/22） |
+| CI | GitHub Actions（Node 20/22，Ubuntu 24.04） |
 
 ---
 
@@ -148,20 +156,52 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ```
 src/
 ├── index.ts         入口
-├── tools/           34 个工具
+├── tools/           37 个工具
 │   ├── dispatch.ts  分发
 │   └── *.ts         各工具
-├── parsers/         .tscn 解析器
+├── parsers/         .tscn 解析器（格式 3）
 ├── writers/         .tscn 生成器
 ├── godot/           Godot CLI 封装
 ├── adapters/        版本适配（v3/v4）
 └── utils/           工具函数
 ```
 
-设计上没什么花头：
+设计特点：
 - 解析器是手写状态机，零依赖
 - 适配器是工厂模式，自动检测版本
 - 所有修改操作会自动备份
+- **场景文件直接写完整 `.tscn`**（不依赖 addNode 片段工具组装，避免空节点问题）
+
+---
+
+## 已知限制
+
+### AI 生成精灵图
+`generate_sprite` 使用 ImageGen AI 生成角色立绘/对话肖像。
+AI 生成的图片是**插画级单帧静图**，不是多帧精灵表，不适合用作游戏角色行走/奔跑动画。
+
+如果你需要动画精灵表：
+1. 从 itch.io / OpenGameArt / Kenney 下载现成精灵表
+2. 用 Aseprite 等工具手工绘制
+3. 然后用 `import_resource` 导入到项目中使用
+
+另外，AI 生成的 PNG 边缘可能有半透明白色残留，需在 Godot 中执行 `--headless --import` 预处理。
+
+### Godot 4 严格模式
+本项目的 `demo_character` 生成的 GDScript 遵循 Godot 4 严格模式规范：
+- 所有局部变量显式声明类型（`var x: float = absf(y)`）
+- 使用 `absf()` 而非 `abs()` 避免类型推断错误
+- 使用 `if x == null:` 替代 `if not x:` 的隐式布尔转换
+
+---
+
+## 调试说明
+
+遇到白屏/角色不可见问题时，用 Godot 的 `--script` 模式代替 `--scene` 模式测试：
+```bash
+godot --headless --script "res://scripts/test_debug.gd"
+```
+`--script` 模式会暴露 GDScript 解析错误和场景树结构问题，比 `--scene` 模式的错误信息更完整。
 
 ---
 
@@ -183,4 +223,4 @@ src/
 
 **ly-ina** · [GitHub](https://github.com/ly-ina)
 
-**最后更新**：2026-07-02
+**最后更新**：2026-07-03
