@@ -32,7 +32,7 @@ import { generateSceneTransition } from "./generate_scene_transition.js";
 import { generateSlgMap } from "./generate_slg_map.js";
 import { generateExampleProject } from "./generate_example_project.js";
 import { translateProject } from "./translate_project.js";
-import { generateSprite } from "./generate_sprite.js";
+import { generateSprite, GenerateSpriteArgs } from "./generate_sprite.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -518,17 +518,25 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "generate_sprite",
-      description: "Generate a pixel-art style character sprite as SVG. Supports: player, enemy_slime, enemy_skeleton, npc_villager, item_coin, item_heart, item_sword, projectile. Color themes: default, red, blue, green, gold, purple.",
+      description: "Generate a pixel-art character sprite as SVG. Describe what you want — body type, head shape, colors, accessories, size. Use help=true to see all options.",
       inputSchema: {
         type: "object",
         properties: {
-          output_path: { type: "string", description: "Output directory (e.g. project's assets/textures folder)" },
-          character: { type: "string", enum: ["player", "enemy_slime", "enemy_skeleton", "npc_villager", "item_coin", "item_heart", "item_sword", "projectile"], description: "Character type" },
-          color_theme: { type: "string", enum: ["default", "red", "blue", "green", "gold", "purple"], description: "Color theme (default: default)" },
-          filename: { type: "string", description: "Output filename (without extension)" },
-          size: { type: "number", description: "Sprite size in pixels (default: 16)" },
+          output_path: { type: "string", description: "Output directory" },
+          name: { type: "string", description: "Character name (filename without ext)" },
+          description: { type: "string", description: "Free-form description of the character you want" },
+          body_type: { type: "string", enum: ["humanoid", "monster", "animal", "robot"], description: "Body type (default: humanoid)" },
+          head_type: { type: "string", enum: ["human", "helmet", "hood", "horned", "animal", "skull", "robot"], description: "Head shape (default: human)" },
+          primary_color: { type: "string", description: "Main color (name or hex, e.g. red or #FF0000)" },
+          secondary_color: { type: "string", description: "Secondary/accent color" },
+          skin_color: { type: "string", description: "Skin/fur color" },
+          height: { type: "number", description: "Height 1-5 (default: 3)" },
+          width: { type: "number", description: "Width 1-5 (default: 3)" },
+          accessory: { type: "string", enum: ["none", "hat", "crown", "hood", "helmet", "bow", "shield", "sword", "staff", "wings"], description: "Accessory (default: none)" },
+          help: { type: "boolean", description: "Set to true to list all available options" },
+          size: { type: "number", description: "Output pixel size (default: 32)" },
         },
-        required: ["output_path", "character"],
+        required: ["output_path"],
       },
     },
   ];
@@ -854,12 +862,23 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
   // --- generate_sprite ---
   if (name === "generate_sprite") {
     const outputPath = args?.output_path as string;
-    const character = args?.character as string;
-    const colorTheme = args?.color_theme as string | undefined;
-    const filename = args?.filename as string | undefined;
-    const size = args?.size as number | undefined;
-    if (!outputPath || !character) throw new Error("Missing required params: output_path, character");
-    return { content: [{ type: "text", text: generateSprite({ output_path: outputPath, character: character as "player" | "enemy_slime" | "enemy_skeleton" | "npc_villager" | "item_coin" | "item_heart" | "item_sword" | "projectile", color_theme: colorTheme, filename, size }) }] };
+    if (!outputPath) throw new Error("Missing required parameter: output_path");
+    const opts: GenerateSpriteArgs = {
+      output_path: outputPath,
+      name: args?.name as string | undefined,
+      description: args?.description as string | undefined,
+      body_type: args?.body_type as string | undefined,
+      head_type: args?.head_type as string | undefined,
+      primary_color: args?.primary_color as string | undefined,
+      secondary_color: args?.secondary_color as string | undefined,
+      skin_color: args?.skin_color as string | undefined,
+      height: args?.height as number | undefined,
+      width: args?.width as number | undefined,
+      accessory: args?.accessory as string | undefined,
+      help: args?.help as boolean | undefined,
+      size: args?.size as number | undefined,
+    };
+    return { content: [{ type: "text", text: generateSprite(opts) }] };
   }
 
   // --- run_project ---

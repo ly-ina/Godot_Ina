@@ -1,254 +1,393 @@
-// MCP Tool: generate_sprite — generate pixel-art style sprites as SVG
-// These SVG files work directly in Godot as texture resources.
+// MCP Tool: generate_sprite — generative pixel art character creator
+// Instead of fixed templates, this composes characters from modular
+// body parts with user-specified attributes.
 import * as fs from "fs";
 import * as path from "path";
 
 export interface GenerateSpriteArgs {
-  /** Path to the Godot project root or output directory */
+  /** Output directory */
   output_path: string;
-  /** Character type */
-  character: "player" | "enemy_slime" | "enemy_skeleton" | "npc_villager" | "item_coin" | "item_heart" | "item_sword" | "projectile";
-  /** Color theme: "default", "red", "blue", "green", "gold", "purple" (default: "default") */
-  color_theme?: string;
-  /** Output filename (without extension, default: auto-generated) */
-  filename?: string;
-  /** Sprite size in pixels (default: 16 for 16x16) */
+  /** Character name (used as filename) */
+  name?: string;
+  /** Short description of what the character looks like (e.g. "a tall elf with a bow and green cloak") */
+  description?: string;
+  /** Body type: "humanoid", "monster", "animal", "robot" */
+  body_type?: string;
+  /** Head shape: "human", "helmet", "hood", "horned", "animal", "skull", "robot" */
+  head_type?: string;
+  /** Primary color (hex or name like "red", "blue") */
+  primary_color?: string;
+  /** Secondary color */
+  secondary_color?: string;
+  /** Skin/fur color */
+  skin_color?: string;
+  /** Height: 1 (short/stubby) to 5 (very tall). Default 3. */
+  height?: number;
+  /** Width: 1 (thin) to 5 (wide/big). Default 3. */
+  width?: number;
+  /** Accessory: "none", "hat", "crown", "hood", "helmet", "bow", "shield", "sword", "staff", "wings" */
+  accessory?: string;
+  /** If true, prints available options. If false (default), generates a character. */
+  help?: boolean;
+  /** Output size in pixels (default: 32) */
   size?: number;
-  /** Output format: "svg" (default, works in Godot) */
-  format?: "svg";
 }
 
-const COLOR_THEMES: Record<string, { primary: string; secondary: string; accent: string; dark: string }> = {
-  default: { primary: "#4A90D9", secondary: "#6BB3F0", accent: "#F5A623", dark: "#2C5F8A" },
-  red: { primary: "#D94A4A", secondary: "#F06B6B", accent: "#FFD700", dark: "#8A2C2C" },
-  blue: { primary: "#3B82C4", secondary: "#5A9FD6", accent: "#FFD700", dark: "#25537A" },
-  green: { primary: "#4CAF50", secondary: "#6BC46E", accent: "#FFD700", dark: "#2E7D32" },
-  gold: { primary: "#D4A017", secondary: "#E8C34A", accent: "#FFFFFF", dark: "#8B6914" },
-  purple: { primary: "#7B4AC9", secondary: "#9B6BEA", accent: "#FFD700", dark: "#4C2C7A" },
+// ── Body part definitions ──
+
+interface BodyPart {
+  pixels: string[];  // row strings, '.' = transparent
+  colors: Record<string, string>;  // color key → actual hex
+}
+
+// Available options for help/auto-complete
+const BODY_TYPES = ["humanoid", "monster", "animal", "robot"];
+const HEAD_TYPES = ["human", "helmet", "hood", "horned", "animal", "skull", "robot"];
+const ACCESSORIES = ["none", "hat", "crown", "hood", "helmet", "bow", "shield", "sword", "staff", "wings"];
+const COLOR_NAMES: Record<string, string> = {
+  red: "#E74C3C", green: "#2ECC71", blue: "#3498DB", gold: "#F1C40F",
+  purple: "#9B59B6", orange: "#E67E22", teal: "#1ABC9C", pink: "#E91E63",
+  brown: "#8B6914", gray: "#95A5A6", white: "#ECF0F1", black: "#2C3E50",
+  cyan: "#00BCD4", lime: "#8BC34A", indigo: "#3F51B5", coral: "#FF7043",
 };
 
-const CHARACTERS: Record<string, { width: number; height: number; pixels: string; frames: number }> = {
-  player: {
-    width: 12, height: 16, frames: 1,
+function resolveColor(c: string | undefined, fallback: string): string {
+  if (!c) return fallback;
+  const lower = c.toLowerCase().trim();
+  if (lower.startsWith("#")) return lower;
+  return COLOR_NAMES[lower] || c;
+}
+
+function pickColor(style: string, base: string): string {
+  // Picks a derived color for shading
+  if (style === "dark") return darken(base, 0.4);
+  if (style === "light") return lighten(base, 0.3);
+  return base;
+}
+
+function darken(hex: string, amount: number): string {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) * (1 - amount));
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) * (1 - amount));
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) * (1 - amount));
+  return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+}
+
+function lighten(hex: string, amount: number): string {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + (255 - parseInt(hex.slice(1, 3), 16)) * amount);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + (255 - parseInt(hex.slice(3, 5), 16)) * amount);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + (255 - parseInt(hex.slice(5, 7), 16)) * amount);
+  return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+}
+
+// ── Core character generator ──
+
+const PART_HEIGHT = { head: 5, body: 5, legs: 4, feet: 2 };
+const PART_WIDTH = 10;
+const TOTAL_HEIGHT = PART_HEIGHT.head + PART_HEIGHT.body + PART_HEIGHT.legs + PART_HEIGHT.feet;
+
+interface CharacterParts {
+  head: BodyPart;
+  body: BodyPart;
+  legs: BodyPart;
+  feet: BodyPart;
+}
+
+function generateCharacter(args: GenerateSpriteArgs): CharacterParts {
+  const bt = args.body_type || "humanoid";
+  const ht = args.head_type || "human";
+  const primary = resolveColor(args.primary_color, "#3498DB");
+  const secondary = resolveColor(args.secondary_color || args.primary_color, "#2ECC71");
+  const skin = resolveColor(args.skin_color, "#FFD0B0");
+  const acc = args.accessory || "none";
+  const h = Math.max(1, Math.min(5, args.height || 3));
+  const w = Math.max(1, Math.min(5, args.width || 3));
+
+  const head = generateHead(ht, skin, primary, secondary, acc, w);
+  const body = generateBody(bt, skin, primary, secondary, acc, h, w);
+  const legs = generateLegs(bt, primary, secondary, h, w);
+  const feet = generateFeet(bt, primary, h, w);
+
+  return { head, body, legs, feet };
+}
+
+function generateHead(ht: string, skin: string, primary: string, secondary: string, acc: string, w: number): BodyPart {
+  const s = skin;
+  const prim = primary;
+  const dark = darken(prim, 0.3);
+  const skinDark = darken(s, 0.2);
+
+  switch (ht) {
+    case "helmet":
+      return {
+        pixels: [
+          "..pppppp..",
+          ".pppppppp.",
+          "pppppppppp",
+          "pppssssppp",
+          "pppssssppp",
+        ],
+        colors: { p: prim, s: skin },
+      };
+    case "hood":
+      return {
+        pixels: [
+          "..hhhh....",
+          ".hhhhhh...",
+          "hhhhsshh..",
+          "hhhssshh..",
+          "hhhssshh..",
+        ],
+        colors: { h: dark, s: skin },
+      };
+    case "horned":
+      return {
+        pixels: [
+          "h.hh..hh.h",
+          "hhss..sshh",
+          "hhsssssshh",
+          "ssssssssss",
+          "ss.s..s.ss",
+        ],
+        colors: { h: darken(prim, 0.6), s: skin },
+      };
+    case "animal":
+      return {
+        pixels: [
+          "..eeee....",
+          ".eeeeee...",
+          "eessssse..",
+          "eessssse..",
+          ".es..se...",
+        ],
+        colors: { e: prim, s: skin },
+      };
+    case "skull":
+      return {
+        pixels: [
+          "..wwww....",
+          ".wwwwww...",
+          "wwdddwww..",
+          "wwddddww..",
+          ".ww..ww...",
+        ],
+        colors: { w: "#ECF0F1", d: "#2C3E50" },
+      };
+    case "robot":
+      return {
+        pixels: [
+          "..mmmm....",
+          ".mlllllm..",
+          "mlmlmlmlm.",
+          "mlllllllm.",
+          "mll..llm..",
+        ],
+        colors: { m: "#95A5A6", l: "#F1C40F" },
+      };
+    default: // human
+      return {
+        pixels: [
+          "..ssss....",
+          ".ssssss...",
+          "ssspppss..",
+          "ssssssss..",
+          ".ss..ss...",
+        ],
+        colors: { s: skin, p: secondary }, // eyes
+      };
+  }
+}
+
+function generateBody(bt: string, skin: string, primary: string, secondary: string, acc: string, h: number, w: number): BodyPart {
+  const prim = primary;
+  const sec = secondary;
+  const darkP = darken(prim, 0.3);
+  const lightP = lighten(prim, 0.2);
+
+  // Wider body for bigger characters
+  const rows: string[] = [];
+  const bodyHeight = Math.min(5, 2 + h);
+  const armOut = acc === "shield" || acc === "bow" || acc === "staff";
+
+  for (let i = 0; i < bodyHeight; i++) {
+    if (bt === "robot") {
+      rows.push(`.mmmmmmmm.`);
+    } else if (bt === "monster") {
+      const f = i === 0 || i === bodyHeight - 1 ? "f" : "p";
+      rows.push(`.ffffffff.`);
+    } else {
+      // Humanoid — arms
+      if (armOut && i === 1) {
+        rows.push(`aa.pppp.aa`); // arms holding accessory
+      } else if (armOut && i === 2) {
+        rows.push(`aa.pppp.aa`);
+      } else {
+        rows.push(`.p..pp..p.`);
+      }
+    }
+  }
+
+  return {
+    pixels: rows,
+    colors: { p: prim, f: sec, m: "#95A5A6", a: skin, ".skin": skin, ".dark": darkP, ".light": lightP },
+  };
+}
+
+function generateLegs(bt: string, primary: string, secondary: string, h: number, w: number): BodyPart {
+  const legCount = Math.min(4, Math.max(2, w)); // wider = more legs
+  const prim = primary;
+  const darkP = darken(prim, 0.3);
+  const legHeight = Math.min(4, 2 + h);
+
+  const rows: string[] = [];
+  for (let i = 0; i < legHeight; i++) {
+    if (bt === "monster" && legCount > 2) {
+      rows.push(`l.l.l.l.l.`);
+    } else if (bt === "robot") {
+      rows.push(`.mmmmmmmm.`);
+    } else {
+      rows.push(`.l..ll..l.`);
+    }
+  }
+
+  return {
+    pixels: rows,
+    colors: { l: darkP, m: "#7F8C8D" },
+  };
+}
+
+function generateFeet(bt: string, primary: string, h: number, w: number): BodyPart {
+  const darkP = darken(primary, 0.5);
+  return {
     pixels: [
-      // 16x12 each — player character (top-down perspective)
-      "....000000....",
-      "...0cccccc0...",
-      "..0cccccccc0..",
-      "..0cbbbbcbb0..",
-      "..0cbbbbcbb0..",
-      ".00aaaaaaaa00.",
-      "0aa22222222aa0",
-      "0a2aaaaaaa2a0",
-      "0aa22222222aa0",
-      "..0a22a22a0..",
-      "..0aaa0aaa0..",
-      ".00aa00aa00.",
-      "0aa00aa00aa00",
-      "0a000aa000a00",
-      "0a000aa000a00",
-      "000..000..000",
-    ].join("\n"),
-  },
-  enemy_slime: {
-    width: 12, height: 10, frames: 1,
-    pixels: [
-      "....pppp....",
-      "...pppppp...",
-      "..pppppppp..",
-      "..pppdppdp..",
-      ".pppppppppp.",
-      ".pppppppppp.",
-      "pppppppppppp",
-      "pppppppppppp",
-      ".pppp..pppp.",
-      "..pp....pp..",
-    ].join("\n"),
-  },
-  enemy_skeleton: {
-    width: 10, height: 14, frames: 1,
-    pixels: [
-      "...wwww...",
-      "..wwwww..",
-      ".wwdddwww.",
-      "wwddddddww",
-      "wwddddddww",
-      "..00..00..",
-      "..0dddd0..",
-      ".00dddd00.",
-      "0w0dddd0w0",
-      "0ww0dd0ww0",
-      ".0wwddww0.",
-      ".w0wddw0w.",
-      "w00w..w00w",
-      "0..0..0..0",
-    ].join("\n"),
-  },
-  npc_villager: {
-    width: 12, height: 16, frames: 1,
-    pixels: [
-      "....aaaa....",
-      "...aaaaaa...",
-      "..aaaaaaaa..",
-      "..aadddada..",
-      "..aadddada..",
-      ".00bbbbbb00.",
-      "0bbbbbbbbbb0",
-      "0bbccbbccbb0",
-      "0bbbbbbbbbb0",
-      "..0bbbbbb0..",
-      "..0b00b0b0..",
-      ".00bb00bb00.",
-      "0bb00bb00bb0",
-      "0b00bb00bb00",
-      "0b00bb00bb00",
-      "000..000..000",
-    ].join("\n"),
-  },
-  item_coin: {
-    width: 8, height: 8, frames: 1,
-    pixels: [
-      "...yy...",
-      ".yyyyyy.",
-      ".yyyyyy.",
-      "yyyyyyyy",
-      "yyyyyyyy",
-      ".yyffyy.",
-      ".yyyyyy.",
-      "...yy...",
-    ].join("\n"),
-  },
-  item_heart: {
-    width: 8, height: 8, frames: 1,
-    pixels: [
-      ".rr..rr.",
-      "rrrrrrrr",
-      "rrrrrrrr",
-      "rrrrrrrr",
-      ".rrrrrr.",
-      "..rrrr..",
-      "...rr...",
-      "....r...",
-    ].join("\n"),
-  },
-  item_sword: {
-    width: 6, height: 12, frames: 1,
-    pixels: [
-      "..ss..",
-      ".sss..",
-      "..ss..",
-      "..ss..",
-      "..ss..",
-      "..ss..",
-      "..ss..",
-      "..ss..",
-      "..ss..",
-      ".sss..",
-      "sssss.",
-      ".sss..",
-    ].join("\n"),
-  },
-  projectile: {
-    width: 6, height: 6, frames: 1,
-    pixels: [
-      "..ff..",
-      ".ffff.",
-      "ffffff",
-      "ffffff",
-      ".ffff.",
-      "..ff..",
-    ].join("\n"),
-  },
-};
+      `.ffffffff.`,
+      `..ffff..`,
+    ],
+    colors: { f: darkP },
+  };
+}
 
 /**
- * Generate a pixel-art style sprite as an SVG file.
- * The SVG can be imported directly into Godot as a texture.
+ * Generate a pixel-art sprite from user-specified attributes.
+ * Uses procedural composition, not templates.
  */
 export function generateSprite(args: GenerateSpriteArgs): string {
-  const { output_path, character, color_theme = "default", filename, size = 16, format = "svg" } = args;
+  const {
+    output_path, name = "character", description, help,
+    body_type = "humanoid", head_type = "human",
+    primary_color, secondary_color, skin_color,
+    height = 3, width = 3, accessory = "none",
+    size = 32,
+  } = args;
 
   if (!output_path) throw new Error("output_path is required");
-  if (!fs.existsSync(output_path)) {
-    fs.mkdirSync(output_path, { recursive: true });
+  if (help) {
+    return [
+      "generate_sprite creates pixel art characters from your description.",
+      "",
+      "Available options:",
+      `  body_type: ${BODY_TYPES.join(", ")}`,
+      `  head_type: ${HEAD_TYPES.join(", ")}`,
+      `  accessory: ${ACCESSORIES.join(", ")}`,
+      `  Colors: ${Object.keys(COLOR_NAMES).join(", ")} (or any hex like #FF5733)`,
+      `  height: 1 (short) to 5 (tall)`,
+      `  width: 1 (thin) to 5 (wide)`,
+      "",
+      "Try: generate_sprite({ output_path: 'assets/textures', name: 'guardian',",
+      '  description: "a tall robot with a sword",',
+      '  body_type: "robot", head_type: "robot",',
+      '  primary_color: "silver", accessory: "sword",',
+      '  height: 4, width: 3 })',
+    ].join("\n");
   }
 
-  const charData = CHARACTERS[character];
-  if (!charData) {
-    throw new Error(`Unknown character type: "${character}". Available: ${Object.keys(CHARACTERS).join(", ")}`);
+  // Generate the character
+  const parts = generateCharacter(args);
+
+  // Compose into a single image
+  const allPixels: string[] = [];
+  let y = 0;
+  const combined: { char: string; color: string }[][] = [];
+
+  const sections = [parts.head, parts.body, parts.legs, parts.feet];
+  for (const section of sections) {
+    for (const row of section.pixels) {
+      const pixelRow: { char: string; color: string }[] = [];
+      for (const ch of row) {
+        const color = section.colors[ch] || resolveColor(primary_color, "#3498DB");
+        pixelRow.push({ char: ch, color: ch === "." ? "transparent" : color });
+      }
+      combined.push(pixelRow);
+      y++;
+    }
   }
 
-  const colors = COLOR_THEMES[color_theme] || COLOR_THEMES.default;
-  const charName = filename || character;
-  const outputFile = path.join(output_path, `${charName}.svg`);
+  // Determine dimensions
+  const height_px = combined.length;
+  let width_px = 0;
+  for (const row of combined) {
+    width_px = Math.max(width_px, row.length);
+  }
 
-  // Parse pixel map
-  const lines = charData.pixels.split("\n").filter(l => l.trim());
-  const pxH = lines.length;
-  const pxW = charData.width;
-
-  // Scale factor
-  const scale = size / Math.max(pxW, pxH);
+  // Scale
+  const scale = size / Math.max(width_px, height_px);
+  const svgW = Math.ceil(width_px * scale);
+  const svgH = Math.ceil(height_px * scale);
 
   // Generate SVG
-  const svgParts: string[] = [
+  const svgLines: string[] = [
     `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${pxW * scale}" height="${pxH * scale}" viewBox="0 0 ${pxW * scale} ${pxH * scale}">`,
-    `<rect width="${pxW * scale}" height="${pxH * scale}" fill="transparent"/>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">`,
   ];
 
-  for (let y = 0; y < lines.length; y++) {
-    const row = lines[y];
-    for (let x = 0; x < row.length; x++) {
-      const ch = row[x];
-      if (ch === ".") continue; // transparent
-
-      let fill: string;
-      switch (ch) {
-        case "p": fill = colors.primary; break;     // primary body
-        case "s": fill = colors.secondary; break;    // secondary/highlight
-        case "d": fill = colors.dark; break;         // dark/shadow
-        case "a": fill = colors.accent; break;       // accent
-        case "0": fill = "#000000"; break;           // outline
-        case "b": fill = "#8B6914"; break;           // brown (skin/wood)
-        case "c": fill = "#FFD0B0"; break;           // skin
-        case "r": fill = "#E74C3C"; break;           // red
-        case "g": fill = "#2ECC71"; break;           // green
-        case "y": fill = "#F1C40F"; break;           // yellow/gold
-        case "f": fill = "#F39C12"; break;           // orange/fire
-        case "w": fill = "#ECF0F1"; break;           // white/bone
-        case "x": fill = "#95A5A6"; break;           // gray
-        default: fill = colors.primary; break;
-      }
-
-      svgParts.push(
-        `<rect x="${x * scale}" y="${y * scale}" width="${scale}" height="${scale}" fill="${fill}"/>`
+  for (let row = 0; row < combined.length; row++) {
+    const pixelRow = combined[row];
+    for (let col = 0; col < pixelRow.length; col++) {
+      const px = pixelRow[col];
+      if (px.char === ".") continue;
+      svgLines.push(
+        `<rect x="${col * scale}" y="${row * scale}" width="${scale}" height="${scale}" fill="${px.color}"/>`
       );
     }
   }
 
-  svgParts.push(`</svg>`);
+  svgLines.push(`</svg>`);
 
-  fs.writeFileSync(outputFile, svgParts.join("\n"), "utf-8");
+  // Write file
+  if (!fs.existsSync(output_path)) {
+    fs.mkdirSync(output_path, { recursive: true });
+  }
+  const outputFile = path.join(output_path, `${name}.svg`);
+  fs.writeFileSync(outputFile, svgLines.join("\n"), "utf-8");
+
+  // Build description summary
+  const descParts = [
+    body_type !== "humanoid" ? body_type : "",
+    head_type !== "human" ? `${head_type} head` : "",
+    accessory !== "none" ? `with ${accessory}` : "",
+    primary_color ? `${primary_color} theme` : "",
+  ].filter(Boolean).join(", ");
 
   return [
-    `Generated sprite: ${charName}`,
-    `  Type: ${character}`,
-    `  Size: ${Math.round(pxW * scale)}x${Math.round(pxH * scale)}px (pixel scale: ${scale}x)`,
-    `  Colors: ${color_theme} theme`,
-    `  File: ${path.relative(output_path, outputFile)}`,
+    `Generated character: ${name}`,
+    `  Size: ${svgW}x${svgH}px`,
+    `${description ? `  Description: ${description}` : ""}`,
+    `  Type: ${descParts || "humanoid"}`,
+    `  File: ${name}.svg`,
     ``,
     `To use in Godot:`,
-    `  1. Import the SVG into your project (drag & drop or import_resource)`,
-    `  2. Assign as texture to a Sprite2D node`,
-    `  3. In the Sprite2D inspector, set Texture > Filter to "Nearest" for crisp pixels`,
+    `  1. import_resource({source_path: "${outputFile}", dest_path: "res://assets/textures/${name}.svg"})`,
+    `  2. Assign as Sprite2D texture`,
+    `  3. Set Texture > Filter to "Nearest" for crisp pixels`,
+    `  4. Adjust Scale to your game's pixel size`,
   ].join("\n");
 }
 
-export function getCharacterList(): string[] {
-  return Object.keys(CHARACTERS);
-}
-
-export function getThemeList(): string[] {
-  return Object.keys(COLOR_THEMES);
+// Exported for external mode lookup
+export function getOptions(): Record<string, string[]> {
+  return {
+    body_types: BODY_TYPES,
+    head_types: HEAD_TYPES,
+    accessories: ACCESSORIES,
+    colors: Object.keys(COLOR_NAMES),
+  };
 }
