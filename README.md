@@ -80,7 +80,7 @@
 ## 开发计划
 
 ```
-Phase 1 🏗️ 基础框架 ──── 20 tools, 238 tests  ✅
+Phase 1 🏗️ 基础框架 ──── 20 tools + 适配层, 259 tests  ✅
 Phase 2 🔧 实用价值 ──── edit/delete/validate  ✅
 Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ✅
 Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
@@ -88,8 +88,8 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 
 ### Phase 1 & 2 已完成 ✅
 
-- [x] 20 个 MCP Tools：场景读写、节点编辑、脚本管理、运行项目、删除、校验、搜索、配置
-- [x] 238 个测试用例，22 个测试文件，真实 Godot 集成测试
+- [x] 20 个 MCP Tools + 版本适配层：场景读写、节点编辑、脚本管理、运行项目、删除、校验、搜索、配置
+- [x] 259 个测试用例，23 个测试文件，真实 Godot 集成测试
 - [x] `.tscn` 解析器 + 生成器 + 完整 round-trip
 - [x] Godot CLI 集成 + 自动检测
 - [x] 脚本编辑器（搜索替换 + 自动备份）
@@ -115,7 +115,8 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 
 - [x] P4.2 CI/CD — GitHub Actions CI（push/PR 自动测试 + lint）
 - [x] P4.3 文档 — 安装指南、Tools 参考、CONTRIBUTING.md
-- [ ] P4.1 Godot 3.x 适配 — 适配层架构、.tscn 格式差异、节点类型映射
+- [x] P4.1 Godot 3.x 适配 — 适配层架构（factory）、节点类型映射（KinematicBody2D → CharacterBody2D 等）、自动版本检测
+- [ ] P4.1 GDScript 1.0→2.0 翻译 — GDScript 语法差异处理
 - [ ] P4.2 Release workflow — 标签触发自动发布到 npm
 - [ ] P4.3 npm 发布 — 最终包名、CHANGELOG、v1.0 release
 
