@@ -23,14 +23,8 @@ npm-debug.log*
 .env
 .env.local
 
-# Test fixtures (generated during testing)
-test-fixtures/scenes/TestScene*.tscn
-
 # WorkBuddy (agent memory & runtime data)
 .workbuddy/
-
-# Debug logs (generated during parser development)
-parser-debug*.log
 
 # Source maps (TypeScript build output)
 *.js.map
@@ -42,11 +36,22 @@ lcov.info
 # Test output fixtures
 test-fixtures/**/__*.tscn
 test-fixtures/**/__*.gd
+test-fixtures/**/__*/
 test-fixtures/**/TestScene*.tscn
 test-fixtures/integration/
+test-fixtures/godot-integration/
 
 # Auto-generated backups
 *.bak
+
+# Godot auto-generated UID files
+*.tscn.uid
+*.gd.uid
+
+# Editor backup files
+*~
+*.tscn~
+*.gd~
 
 # Windows reserved device names (causes Git errors)
 NUL
