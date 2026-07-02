@@ -512,11 +512,10 @@ Run a Godot project using the CLI. Auto-detects the Godot executable via `GODOT_
 
 ### 前置条件
 
-- Node.js 18+
+- Node.js 20+
 - npm 或 yarn
-- TypeScript 5.0+
-- Godot 4.x（用于集成测试和 `run_project`/`execute_gdscript` 工具）
-- 对 Godot 3.x 项目：适配层自动处理节点类型映射（`KinematicBody2D` → `CharacterBody2D` 等）
+- Godot 4.x（可选，用于 `run_project`/`execute_gdscript`）
+- 对 Godot 3.x 项目：自动适配层处理节点类型映射
 
 ### 环境设置
 

@@ -2,7 +2,7 @@
 
 ## 前置条件
 
-- **Node.js** 18+（推荐 22）
+- **Node.js** 20+（推荐 22）
 - **npm** 或 yarn
 - **Godot 4.x**（可选，用于 `run_project` 和 `execute_gdscript` 工具）
 
