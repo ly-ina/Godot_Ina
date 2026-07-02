@@ -80,7 +80,7 @@
 ## 开发计划
 
 ```
-Phase 1 🏗️ 基础框架 ──── 20 tools + 适配层, 259 tests  ✅
+Phase 1 🏗️ 基础框架 ──── 20 tools + 适配层, 271 tests  ✅
 Phase 2 🔧 实用价值 ──── edit/delete/validate  ✅
 Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ✅
 Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
@@ -113,11 +113,9 @@ Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0  ◀️ 当前
 
 **目标**：覆盖多版本 Godot，正式发布到 npm。
 
-- [x] P4.2 CI/CD — GitHub Actions CI（push/PR 自动测试 + lint）
+- [x] P4.1 Godot 3.x 适配 — 适配层架构、节点类型映射、自动版本检测、GDScript 1.0→2.0 翻译器
+- [x] P4.2 CI/CD — GitHub Actions CI + Release workflow
 - [x] P4.3 文档 — 安装指南、Tools 参考、CONTRIBUTING.md
-- [x] P4.1 Godot 3.x 适配 — 适配层架构（factory）、节点类型映射（KinematicBody2D → CharacterBody2D 等）、自动版本检测
-- [ ] P4.1 GDScript 1.0→2.0 翻译 — GDScript 语法差异处理
-- [ ] P4.2 Release workflow — 标签触发自动发布到 npm
 - [ ] P4.3 npm 发布 — 最终包名、CHANGELOG、v1.0 release
 
 **Phase 4 里程碑**：📦 v1.0 发布到 npm
