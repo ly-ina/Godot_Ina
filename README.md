@@ -32,7 +32,7 @@
 
 ## 能力概览
 
-### ✅ 已实现（14 个 MCP Tools）
+### ✅ 已实现（15 个 MCP Tools）
 
 | Tool | 功能 |
 |------|------|
@@ -49,6 +49,7 @@
 | `delete_file` | 删除项目文件（默认回收站模式） |
 | `validate_scene` | 校验 `.tscn` 场景完整性 |
 | `validate_project` | 校验整个 Godot 项目 |
+| `execute_gdscript` | 通过 Godot CLI 执行 GDScript 代码 |
 | `run_project` | 通过 Godot CLI 运行项目 |
 
 ### 核心能力
@@ -74,77 +75,32 @@
 ## 开发计划
 
 ```
-Phase 1 🏗️ 基础框架 ──── MVP + 测试体系  ✅
-Phase 2 🔧 实用价值 ──── 补全核心工具链  ◀️ 当前
-Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理
+Phase 1 🏗️ 基础框架 ──── 14 tools, 228 tests  ✅
+Phase 2 🔧 实用价值 ──── edit/delete/validate  ✅
+Phase 3 🎮 开发体验 ──── 代码执行 + 资源管理  ◀️ 当前
 Phase 4 📦 发布稳定 ──── 版本兼容 + v1.0
 ```
 
-### Phase 1: 基础框架 ✅
+### Phase 1 & 2 已完成 ✅
 
-**目标**：实现 MCP Server 完整读写闭环，搭建测试基础设施。
+- [x] 14 个 MCP Tools：场景读写、节点编辑、脚本管理、运行项目、删除、校验
+- [x] 228 个测试用例，21 个测试文件，真实 Godot 集成测试
+- [x] `.tscn` 解析器 + 生成器 + 完整 round-trip
+- [x] Godot CLI 集成 + 自动检测
+- [x] 脚本编辑器（搜索替换 + 自动备份）
+- [x] 删除操作（回收站模式 + 级联确认）
+- [x] 场景/项目校验
 
-- [x] P1.1 MCP Server 核心框架
-  - [x] 项目脚手架（TypeScript + MCP SDK + Vitest）
-  - [x] 入口 `index.ts`（StdioServerTransport）
-  - [x] 工具分发层 `dispatch.ts`
-- [x] P1.2 `.tscn` 解析器 + 生成器
-  - [x] 基于状态机的逐行解析器（header、nodes、ext_resources、connections）
-  - [x] 节点树构建（`buildNodeTree`）
-  - [x] 属性解析器（`parseGodotValue` — 支持所有 Godot 基础类型）
-  - [x] `sceneToTscn` 生成器（完整 round-trip 兼容）
-- [x] P1.3 14 个 MCP Tools
-  - [x] `ping` / `list_scenes` / `read_scene` / `create_scene`
-  - [x] `read_script` / `create_script` / `add_node` / `edit_node`
-  - [x] `edit_script` / `delete_node` / `delete_file`
-  - [x] `validate_scene` / `validate_project` / `run_project`
-- [x] P1.4 测试体系
-  - [x] 21 个测试文件，228 个测试用例
-  - [x] 全部通过，含真实 Godot 集成测试
-  - [x] MCP 进程集成测试（tool/list / tool/call）
-
-### Phase 2: 实用价值提升 ◀️ 当前阶段
-
-**目标**：补全核心编辑功能，让 AI 能真正参与游戏逻辑开发。
-
-#### P2.1 脚本编辑器 ✅
-
-| 任务 | 状态 |
-|------|------|
-| `edit_script` 工具 | ✅ 已完成 |
-| 自动备份 (`create_backup`) | ✅ 已完成 |
-| 单元测试（12 个测试） | ✅ 已完成 |
-
-#### P2.2 删除操作 ✅
-
-| 任务 | 状态 |
-|------|------|
-| `delete_node` 工具（递归删除子节点确认） | ✅ 已完成 |
-| `delete_file` 工具（回收站模式，可恢复） | ✅ 已完成 |
-| 单元测试（17 个测试） | ✅ 已完成 |
-
-#### P2.3 场景校验 ✅
-
-| 任务 | 状态 |
-|------|------|
-| `validate_scene` 工具（结构校验、引用检查、重复名称检测） | ✅ 已完成 |
-| `validate_project` 工具（全项目扫描、脚本引用完整性） | ✅ 已完成 |
-| 单元测试（8 个测试） | ✅ 已完成 |
-
-**Phase 2 里程碑达成**：AI 能完整参与"创建 → 编码 → 删除 → 校验"全流程 🎉
-
----
-
-### Phase 3: 开发体验增强
+### Phase 3: 开发体验增强 ◀️ 当前阶段
 
 **目标**：让 AI 能执行代码、管理资源、配置项目，接近 Human-in-the-loop 开发体验。
 
-#### P3.1 代码执行
+#### P3.1 代码执行 ✅
 
-| 任务 | 说明 | 优先级 |
-|------|------|--------|
-| `execute_gdscript` | 通过 Godot CLI 执行 GDScript 代码片段，返回 stdout/stderr | P1 |
-| `run_test` | 运行指定场景并验证输出结果 | P2 |
+| 任务 | 状态 |
+|------|------|
+| `execute_gdscript` 工具 | ✅ 已完成 |
+| 单元测试 | ✅ 已完成 |
 
 #### P3.2 资源管理
 

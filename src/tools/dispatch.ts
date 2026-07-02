@@ -13,6 +13,7 @@ import { deleteNode } from "./delete_node.js";
 import { deleteFile } from "./delete_file.js";
 import { validateScene } from "./validate_scene.js";
 import { validateProject } from "./validate_project.js";
+import { executeGDScript } from "./execute_gdscript.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -210,6 +211,19 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "execute_gdscript",
+      description: "Execute GDScript code via Godot CLI and return the output. Creates a temporary script file, runs it in headless mode, and captures stdout.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          code: { type: "string", description: "GDScript code to execute" },
+          project_path: { type: "string", description: "Path to Godot project root" },
+          timeout: { type: "number", description: "Optional timeout in milliseconds (default: 30000)" },
+        },
+        required: ["code", "project_path"],
+      },
+    },
   ];
 }
 
@@ -336,6 +350,15 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const projectPath = args?.project_path as string;
     if (!projectPath) throw new Error("Missing required parameter: project_path");
     return { content: [{ type: "text", text: validateProject({ project_path: projectPath }) }] };
+  }
+
+  // --- execute_gdscript ---
+  if (name === "execute_gdscript") {
+    const code = args?.code as string;
+    const projectPath = args?.project_path as string;
+    const timeout = args?.timeout as number | undefined;
+    if (!code || !projectPath) throw new Error("Missing required params: code, project_path");
+    return { content: [{ type: "text", text: executeGDScript({ code, project_path: projectPath, timeout }) }] };
   }
 
   // --- run_project ---
