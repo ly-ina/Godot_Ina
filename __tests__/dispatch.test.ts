@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 33 tool definitions", () => {
+  it("returns all 34 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(33);
+    expect(tools.length).toBe(34);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -51,6 +51,7 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("generate_scene_transition");
     expect(names).toContain("generate_slg_map");
     expect(names).toContain("generate_example_project");
+    expect(names).toContain("translate_project");
   });
 });
 
@@ -194,5 +195,9 @@ describe("executeTool", () => {
 
   it("generate_example_project with missing params throws error", () => {
     expect(() => executeTool("generate_example_project", {})).toThrow("Missing required");
+  });
+
+  it("translate_project with missing path throws error", () => {
+    expect(() => executeTool("translate_project", {})).toThrow("Missing required");
   });
 });

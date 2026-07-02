@@ -31,6 +31,7 @@ import { generateEquipmentSystem } from "./generate_equipment_system.js";
 import { generateSceneTransition } from "./generate_scene_transition.js";
 import { generateSlgMap } from "./generate_slg_map.js";
 import { generateExampleProject } from "./generate_example_project.js";
+import { translateProject } from "./translate_project.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
 import { runGodotProject } from "./run_project.js";
@@ -501,6 +502,19 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["output_path", "template"],
       },
     },
+    {
+      name: "translate_project",
+      description: "Translate a Godot 3.x project to 4.x format. Converts scene node types (KinematicBody2D → CharacterBody2D), GDScript 1.0→2.0 syntax, and updates project.godot config.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot 3.x project root" },
+          target: { type: "string", enum: ["all", "scenes", "scripts"], description: "What to translate (default: all)" },
+          create_backup: { type: "boolean", description: "Create .v3bak backups (default: true)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -530,7 +544,7 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const result = readScene(scenePath);
     if (!result.success) throw new Error(result.error || "Failed to read scene");
     const s = result.scene!;
-    const text = `Scene: ${scenePath}\n\nFormat: ${s.header.format}\nLoad Steps: ${s.header.loadSteps}\n` +
+    const text = `Scene: ${scenePath}\n\nVersion: ${s.version}\nFormat: ${s.header.format}\nLoad Steps: ${s.header.loadSteps}\n` +
       `Node Count: ${s.nodeCount}\nRoot Node: ${s.rootNode || "(none)"}\n\nNodes:\n` +
       s.nodes.map((n: { name: string; type: string; parent: string | null }, i: number) => `${i + 1}. ${n.name} (${n.type})${n.parent ? ` - parent: ${n.parent}` : ""}`).join("\n");
     return { content: [{ type: "text", text }] };
@@ -812,6 +826,13 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const projectName = args?.project_name as string | undefined;
     if (!outputPath || !template) throw new Error("Missing required params: output_path, template");
     return { content: [{ type: "text", text: generateExampleProject({ output_path: outputPath, template: template as "platformer2d" | "rpg_dialogue" | "topdown_shooter" | "minimal_fps", project_name: projectName }) }] };
+  }
+
+  // --- translate_project ---
+  if (name === "translate_project") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: translateProject({ project_path: projectPath, target: args?.target as "all" | "scenes" | "scripts" | undefined, create_backup: args?.create_backup as boolean | undefined }) }] };
   }
 
   // --- run_project ---
