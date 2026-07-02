@@ -47,13 +47,13 @@ export function generateAnimation(args: GenerateAnimationArgs): string {
   if (!project_path) throw new Error("project_path is required");
   if (!fs.existsSync(project_path)) throw new Error(`Project path not found: ${project_path}`);
 
-  const sceneDir = path.join(project_path, "scenes", "characters");
-  const scriptDir = path.join(project_path, "scripts", "characters");
+  const sceneDir = path.resolve(project_path, "scenes", "characters");
+  const scriptDir = path.resolve(project_path, "scripts", "characters");
   if (!fs.existsSync(sceneDir)) fs.mkdirSync(sceneDir, { recursive: true });
   if (!fs.existsSync(scriptDir)) fs.mkdirSync(scriptDir, { recursive: true });
 
-  const scenePath = path.join(sceneDir, `${name}.tscn`);
-  const scriptPath = path.join(scriptDir, `${name}.gd`);
+  const scenePath = path.resolve(sceneDir, `${name}.tscn`);
+  const scriptPath = path.resolve(scriptDir, `${name}.gd`);
 
   // ── Calculate sprite sheet layout ──
   interface AnimDef { name: string; frames: number; fps: number; loop: boolean; hframes: number; }
@@ -149,7 +149,7 @@ export function generateAnimation(args: GenerateAnimationArgs): string {
   addNode({ scene_path: scenePath, parent_node_name: name, node_type: "CollisionShape2D", node_name: "CollisionShape2D" });
 
   // ── Generate sprite sheet placeholder SVG ──
-  const spriteDir = path.join(project_path, "assets", "spritesheets");
+  const spriteDir = path.resolve(project_path, "assets", "spritesheets");
   if (!fs.existsSync(spriteDir)) fs.mkdirSync(spriteDir, { recursive: true });
   const sheetPath = path.join(spriteDir, `${name}_sheet.svg`);
 

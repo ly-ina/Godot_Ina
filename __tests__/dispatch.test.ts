@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 36 tool definitions", () => {
+  it("returns all 37 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(36);
+    expect(tools.length).toBe(37);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -54,6 +54,7 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("translate_project");
     expect(names).toContain("generate_sprite");
     expect(names).toContain("generate_animation");
+    expect(names).toContain("demo_character");
   });
 });
 
@@ -209,5 +210,9 @@ describe("executeTool", () => {
 
   it("generate_animation with missing path throws error", () => {
     expect(() => executeTool("generate_animation", {})).toThrow("Missing required");
+  });
+
+  it("demo_character with missing path throws error", () => {
+    expect(() => executeTool("demo_character", {})).toThrow("Missing required");
   });
 });

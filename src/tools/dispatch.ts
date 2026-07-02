@@ -33,6 +33,7 @@ import { generateSlgMap } from "./generate_slg_map.js";
 import { generateExampleProject } from "./generate_example_project.js";
 import { translateProject } from "./translate_project.js";
 import { generateAnimation } from "./generate_animation.js";
+import { demoCharacter } from "./demo_character.js";
 import { generateSprite, GenerateSpriteArgs } from "./generate_sprite.js";
 import type { GenerateTerrainArgs } from "./generate_terrain.js";
 import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
@@ -554,6 +555,21 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "demo_character",
+      description: "One-command demo: generate a character with AI behavior (wander/patrol), set as main scene, and run in Godot. See the character move by itself.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project (created if missing)" },
+          name: { type: "string", description: "Character name (default: demo_char)" },
+          behavior: { type: "string", enum: ["wander", "patrol", "idle"], description: "AI behavior (default: wander)" },
+          frame_width: { type: "number", description: "Frame width (default: 32)" },
+          frame_height: { type: "number", description: "Frame height (default: 48)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -906,6 +922,13 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
       turn: args?.turn as boolean | undefined,
       jump: args?.jump as boolean | undefined,
     }) }] };
+  }
+
+  // --- demo_character ---
+  if (name === "demo_character") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: demoCharacter({ project_path: projectPath, name: args?.name as string | undefined, behavior: args?.behavior as "wander" | "patrol" | "idle" | undefined, frame_width: args?.frame_width as number | undefined, frame_height: args?.frame_height as number | undefined }) }] };
   }
 
   // --- run_project ---
