@@ -17,11 +17,16 @@ export function findTscnFiles(dirPath: string, fileList: string[] = []): string[
       
       if (stat.isDirectory()) {
         // Skip common directories that don't contain Godot scenes
-        if (file === ".git" || file === "node_modules" || file === ".godot") {
+        if (file === ".git" || file === "node_modules" || file === ".godot" ||
+            file === "integration" || file === "__pycache__") {
           continue;
         }
         findTscnFiles(fullPath, fileList);
       } else if (file.endsWith(".tscn")) {
+        // Skip test fixture files
+        if (file.startsWith("__") || file.startsWith("TestScene")) {
+          continue;
+        }
         fileList.push(fullPath);
       }
     }
@@ -33,13 +38,18 @@ export function findTscnFiles(dirPath: string, fileList: string[] = []): string[
   return fileList;
 }
 
-export function getFileInfo(filePath: string): SceneInfo {
-  const stat = fs.statSync(filePath);
-  return {
-    path: filePath,
-    size: stat.size,
-    modified: stat.mtime.toISOString(),
-  };
+export function getFileInfo(filePath: string): SceneInfo | null {
+  try {
+    const stat = fs.statSync(filePath);
+    return {
+      path: filePath,
+      size: stat.size,
+      modified: stat.mtime.toISOString(),
+    };
+  } catch {
+    // File might have been deleted between readdirSync and statSync
+    return null;
+  }
 }
 
 export function listScenes(projectPath: string): SceneInfo[] {
@@ -56,7 +66,9 @@ export function listScenes(projectPath: string): SceneInfo[] {
   const tscnFiles = findTscnFiles(projectPath);
   
   // Get file info for each scene
-  const scenes = tscnFiles.map(filePath => getFileInfo(filePath));
+  const scenes = tscnFiles
+    .map(filePath => getFileInfo(filePath))
+    .filter((info): info is SceneInfo => info !== null);
   
   return scenes;
 }
