@@ -73,20 +73,21 @@ export function sceneToTscn(
 function writeNode(
   lines: string[],
   node: SceneNode,
-  parentPath: string | null
+  parentName: string | null
 ): void {
   // Build node declaration
   const parts: string[] = [];
 
-  if (parentPath === null) {
+  if (parentName === null) {
     // Root node: [node name="..." type="..."]
     parts.push(`[node name="${node.name}" type="${node.type}"`);
-  } else if (parentPath === ".") {
+  } else if (parentName === ".") {
     // Direct child of root: [node name="..." type="..." parent="."]
     parts.push(`[node name="${node.name}" type="${node.type}" parent="."`);
   } else {
     // Child of another node: [node name="..." type="..." parent="..."]
-    parts.push(`[node name="${node.name}" type="${node.type}" parent="${parentPath}"`);
+    // parentName is the full path like "World" or "World/Player"
+    parts.push(`[node name="${node.name}" type="${node.type}" parent="${parentName}"`);
   }
 
   // Close the bracket
@@ -100,9 +101,19 @@ function writeNode(
 
   // Children
   for (const child of node.children) {
-    const childPath =
-      parentPath === null ? `.` : `${parentPath}/${node.name}`;
-    writeNode(lines, child, childPath);
+    // Compute the parent path for the child:
+    // - Root's direct children (parentName === null): childParent = "."
+    // - Children of root's direct child (parentName === "."): childParent = "World"
+    // - Deeper children: childParent = "World/Player"
+    let childParent: string;
+    if (parentName === null) {
+      childParent = ".";
+    } else if (parentName === ".") {
+      childParent = node.name;
+    } else {
+      childParent = `${parentName}/${node.name}`;
+    }
+    writeNode(lines, child, childParent);
   }
 
   // Blank line between nodes (Godot convention)

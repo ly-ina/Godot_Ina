@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { TscnParser } from "../src/parsers/tscn-parser.js";
-import { sceneToTscn, createEmptyScene } from "../src/writers/tscn-writer.js";
+import { sceneToTscn, createEmptyScene, writeSceneToFile } from "../src/writers/tscn-writer.js";
 import * as path from "path";
+import * as fs from "fs";
 
 describe("sceneToTscn", () => {
   it("generates valid header format", () => {
@@ -34,7 +35,6 @@ describe("sceneToTscn", () => {
     const serialized = sceneToTscn(original);
 
     // Write to temp file and parse back
-    const fs = require("fs");
     const tmpFile = path.resolve("test-fixtures/scenes/__roundtrip_test.tscn");
     fs.writeFileSync(tmpFile, serialized, "utf-8");
 
