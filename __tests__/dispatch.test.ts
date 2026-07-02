@@ -1,0 +1,78 @@
+// Tests for the MCP dispatch layer (src/tools/dispatch.ts)
+import { describe, it, expect } from "vitest";
+import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
+
+describe("getToolDefinitions", () => {
+  it("returns all 9 tool definitions", () => {
+    const tools = getToolDefinitions();
+    expect(tools.length).toBe(9);
+  });
+
+  it("each tool has name, description, inputSchema", () => {
+    for (const tool of getToolDefinitions()) {
+      expect(tool.name).toBeTruthy();
+      expect(tool.description).toBeTruthy();
+      expect(tool.inputSchema).toBeTruthy();
+    }
+  });
+
+  it("tool names match expected set", () => {
+    const names = getToolDefinitions().map(t => t.name);
+    expect(names).toContain("ping");
+    expect(names).toContain("list_scenes");
+    expect(names).toContain("read_scene");
+    expect(names).toContain("create_scene");
+    expect(names).toContain("read_script");
+    expect(names).toContain("add_node");
+    expect(names).toContain("edit_node");
+    expect(names).toContain("create_script");
+    expect(names).toContain("run_project");
+  });
+});
+
+describe("executeTool", () => {
+  it("ping returns pong", () => {
+    const result = executeTool("ping", {});
+    expect(result.content[0].text).toBe("pong");
+  });
+
+  it("unknown tool throws error", () => {
+    expect(() => executeTool("nonexistent_tool", {})).toThrow("Unknown tool");
+  });
+
+  it("missing required parameter throws error", () => {
+    expect(() => executeTool("read_scene", {})).toThrow("Missing required parameter");
+  });
+
+  it("read_scene with non-existent file throws error", () => {
+    expect(() => executeTool("read_scene", { scene_path: "/nonexistent.tscn" })).toThrow("not found");
+  });
+
+  it("create_scene with missing params throws error", () => {
+    expect(() => executeTool("create_scene", {})).toThrow("Missing required");
+  });
+
+  it("create_scene with partial params throws error", () => {
+    expect(() => executeTool("create_scene", { scene_path: "test.tscn" })).toThrow("Missing required");
+  });
+
+  it("run_project with missing path throws error", () => {
+    expect(() => executeTool("run_project", {})).toThrow("project_path");
+  });
+
+  it("read_script with missing path throws error", () => {
+    expect(() => executeTool("read_script", {})).toThrow("Missing required");
+  });
+
+  it("add_node with missing params throws error", () => {
+    expect(() => executeTool("add_node", { scene_path: "test.tscn", parent_node_name: "." })).toThrow("Missing required");
+  });
+
+  it("edit_node with missing params throws error", () => {
+    expect(() => executeTool("edit_node", { scene_path: "test.tscn" })).toThrow("Missing required");
+  });
+
+  it("create_script with missing content throws error", () => {
+    expect(() => executeTool("create_script", { script_path: "test.gd" })).toThrow("Missing required");
+  });
+});

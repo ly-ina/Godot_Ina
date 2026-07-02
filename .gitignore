@@ -36,6 +36,15 @@ parser-debug*.log
 # Source maps (TypeScript build output)
 *.js.map
 
+# Coverage reports
+coverage/
+lcov.info
+
+# Test output fixtures
+test-fixtures/**/__*.tscn
+test-fixtures/**/TestScene*.tscn
+test-fixtures/integration/
+
 # Windows reserved device names (causes Git errors)
 NUL
 CON
