@@ -21,6 +21,8 @@ import { findReferences } from "./find_references.js";
 import { importResource } from "./import_resource.js";
 import { deleteResource } from "./delete_resource.js";
 import { renameNode } from "./rename_node.js";
+import { batchEditScript } from "./batch_edit_script.js";
+import { initProject } from "./init_project.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -337,6 +339,35 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["scene_path", "old_name", "new_name"],
       },
     },
+    {
+      name: "batch_edit_script",
+      description: "Search and replace text across multiple files (scripts, scenes, or both) in a Godot project. Creates backups automatically.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          search: { type: "string", description: "String to search for" },
+          replace: { type: "string", description: "String to replace with" },
+          file_type: { type: "string", enum: ["gd", "tscn", "all"], description: "File type to process (default: gd)" },
+          create_backup: { type: "boolean", description: "Create .bak backups (default: true)" },
+        },
+        required: ["project_path", "search", "replace"],
+      },
+    },
+    {
+      name: "init_project",
+      description: "Create a new Godot 4.x project with standard directory structure, project.godot config, and an empty main scene.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path where the project should be created" },
+          project_name: { type: "string", description: "Project name (defaults to directory name)" },
+          width: { type: "number", description: "Viewport width (default: 1152)" },
+          height: { type: "number", description: "Viewport height (default: 648)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -548,6 +579,29 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const updateConnections = args?.update_connections as boolean | undefined;
     if (!scenePath || !oldName || !newName) throw new Error("Missing required params: scene_path, old_name, new_name");
     return { content: [{ type: "text", text: renameNode({ scene_path: scenePath, old_name: oldName, new_name: newName, update_parent_refs: updateParentRefs, update_connections: updateConnections }) }] };
+  }
+
+  // --- batch_edit_script ---
+  if (name === "batch_edit_script") {
+    const projectPath = args?.project_path as string;
+    const search = args?.search as string;
+    const replace = args?.replace as string;
+    const fileType = args?.file_type as "gd" | "tscn" | "all" | undefined;
+    const createBackup = args?.create_backup as boolean | undefined;
+    if (!projectPath || search === undefined || replace === undefined) {
+      throw new Error("Missing required params: project_path, search, replace");
+    }
+    return { content: [{ type: "text", text: batchEditScript({ project_path: projectPath, search, replace, file_type: fileType, create_backup: createBackup }) }] };
+  }
+
+  // --- init_project ---
+  if (name === "init_project") {
+    const projectPath = args?.project_path as string;
+    const projectName = args?.project_name as string | undefined;
+    const width = args?.width as number | undefined;
+    const height = args?.height as number | undefined;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: initProject({ project_path: projectPath, project_name: projectName, width, height }) }] };
   }
 
   // --- run_project ---
