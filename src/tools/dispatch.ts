@@ -8,6 +8,11 @@ import { readScript } from "./read_script.js";
 import { addNode } from "./add_node.js";
 import { editNode } from "./edit_node.js";
 import { createScript } from "./create_script.js";
+import { editScript } from "./edit_script.js";
+import { deleteNode } from "./delete_node.js";
+import { deleteFile } from "./delete_file.js";
+import { validateScene } from "./validate_scene.js";
+import { validateProject } from "./validate_project.js";
 import { runGodotProject } from "./run_project.js";
 
 export interface ToolResponse {
@@ -121,6 +126,30 @@ export function getToolDefinitions(): ToolDefinition[] {
       },
     },
     {
+      name: "edit_script",
+      description: "Modify an existing .gd GDScript file using search/replace. Specify one or more replacements, each with a 'search' string and 'replace' string. Creates an automatic backup (.bak) before making changes.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          script_path: { type: "string", description: "Path to the .gd script file to modify" },
+          replacements: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                search: { type: "string", description: "Exact string to search for (case-sensitive)" },
+                replace: { type: "string", description: "String to replace the matched text with" },
+              },
+              required: ["search", "replace"],
+            },
+            description: "Array of search/replace operations (applied in order)",
+          },
+          create_backup: { type: "boolean", description: "Whether to create a .bak backup before editing (default: true)" },
+        },
+        required: ["script_path", "replacements"],
+      },
+    },
+    {
       name: "run_project",
       description: "Run a Godot project using the Godot CLI (detects Godot executable automatically)",
       inputSchema: {
@@ -129,6 +158,54 @@ export function getToolDefinitions(): ToolDefinition[] {
           project_path: { type: "string", description: "Path to Godot project root (must contain project.godot)" },
           mode: { type: "string", enum: ["normal", "headless", "debug"], description: "Run mode (optional)" },
           extra_args: { type: "array", items: { type: "string" }, description: "Optional extra CLI arguments" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "delete_node",
+      description: "Remove a node from a .tscn scene file. By default refuses to delete nodes with children — use recursive: true to force.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          scene_path: { type: "string", description: "Path to the .tscn scene file" },
+          node_name: { type: "string", description: "Name of the node to delete" },
+          recursive: { type: "boolean", description: "Whether to delete child nodes as well (default: false)" },
+        },
+        required: ["scene_path", "node_name"],
+      },
+    },
+    {
+      name: "delete_file",
+      description: "Delete a Godot project file (.tscn, .gd, .import). By default moves to trash instead of permanent deletion.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          file_path: { type: "string", description: "Path to the file to delete" },
+          use_trash: { type: "boolean", description: "Move to trash instead of permanent delete (default: true)" },
+        },
+        required: ["file_path"],
+      },
+    },
+    {
+      name: "validate_scene",
+      description: "Validate a .tscn scene file for structural integrity — checks header, root node, duplicate names, resource references.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          scene_path: { type: "string", description: "Path to the .tscn scene file" },
+          project_path: { type: "string", description: "Optional project root for reference resolution" },
+        },
+        required: ["scene_path"],
+      },
+    },
+    {
+      name: "validate_project",
+      description: "Validate an entire Godot project — checks project.godot, validates all scenes, resolves script references.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to the Godot project root" },
         },
         required: ["project_path"],
       },
@@ -218,6 +295,47 @@ export function executeTool(name: string, args: Record<string, unknown> | undefi
     const content = args?.content as string;
     if (!scriptPath || !content) throw new Error("Missing required params: script_path, content");
     return { content: [{ type: "text", text: createScript({ script_path: scriptPath, content, scene_path: args?.scene_path as string, node_name: args?.node_name as string }) }] };
+  }
+
+  // --- edit_script ---
+  if (name === "edit_script") {
+    const scriptPath = args?.script_path as string;
+    const replacements = args?.replacements as Array<{ search: string; replace: string; }>;
+    const createBackup = args?.create_backup as boolean | undefined;
+    if (!scriptPath || !replacements) throw new Error("Missing required params: script_path, replacements");
+    return { content: [{ type: "text", text: editScript({ script_path: scriptPath, replacements, create_backup: createBackup }) }] };
+  }
+
+  // --- delete_node ---
+  if (name === "delete_node") {
+    const scenePath = args?.scene_path as string;
+    const nodeName = args?.node_name as string;
+    const recursive = args?.recursive as boolean | undefined;
+    if (!scenePath || !nodeName) throw new Error("Missing required params: scene_path, node_name");
+    return { content: [{ type: "text", text: deleteNode({ scene_path: scenePath, node_name: nodeName, recursive }) }] };
+  }
+
+  // --- delete_file ---
+  if (name === "delete_file") {
+    const filePath = args?.file_path as string;
+    const useTrash = args?.use_trash as boolean | undefined;
+    if (!filePath) throw new Error("Missing required parameter: file_path");
+    return { content: [{ type: "text", text: deleteFile({ file_path: filePath, use_trash: useTrash }) }] };
+  }
+
+  // --- validate_scene ---
+  if (name === "validate_scene") {
+    const scenePath = args?.scene_path as string;
+    const projectPath = args?.project_path as string | undefined;
+    if (!scenePath) throw new Error("Missing required parameter: scene_path");
+    return { content: [{ type: "text", text: validateScene({ scene_path: scenePath, project_path: projectPath }) }] };
+  }
+
+  // --- validate_project ---
+  if (name === "validate_project") {
+    const projectPath = args?.project_path as string;
+    if (!projectPath) throw new Error("Missing required parameter: project_path");
+    return { content: [{ type: "text", text: validateProject({ project_path: projectPath }) }] };
   }
 
   // --- run_project ---

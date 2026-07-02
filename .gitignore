@@ -42,8 +42,12 @@ lcov.info
 
 # Test output fixtures
 test-fixtures/**/__*.tscn
+test-fixtures/**/__*.gd
 test-fixtures/**/TestScene*.tscn
 test-fixtures/integration/
+
+# Auto-generated backups
+*.bak
 
 # Windows reserved device names (causes Git errors)
 NUL

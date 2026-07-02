@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  try { fs.unlinkSync(MOCK_PROJECT_GODOT); } catch {}
+  // Keep project.godot — other test files depend on it
 });
 
 describe("validateGodotProject", () => {

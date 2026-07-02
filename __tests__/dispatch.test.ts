@@ -3,9 +3,9 @@ import { describe, it, expect } from "vitest";
 import { getToolDefinitions, executeTool } from "../src/tools/dispatch.js";
 
 describe("getToolDefinitions", () => {
-  it("returns all 9 tool definitions", () => {
+  it("returns all 14 tool definitions", () => {
     const tools = getToolDefinitions();
-    expect(tools.length).toBe(9);
+    expect(tools.length).toBe(14);
   });
 
   it("each tool has name, description, inputSchema", () => {
@@ -27,6 +27,11 @@ describe("getToolDefinitions", () => {
     expect(names).toContain("edit_node");
     expect(names).toContain("create_script");
     expect(names).toContain("run_project");
+    expect(names).toContain("edit_script");
+    expect(names).toContain("delete_node");
+    expect(names).toContain("delete_file");
+    expect(names).toContain("validate_scene");
+    expect(names).toContain("validate_project");
   });
 });
 
@@ -74,5 +79,25 @@ describe("executeTool", () => {
 
   it("create_script with missing content throws error", () => {
     expect(() => executeTool("create_script", { script_path: "test.gd" })).toThrow("Missing required");
+  });
+
+  it("edit_script with missing params throws error", () => {
+    expect(() => executeTool("edit_script", {})).toThrow("Missing required");
+  });
+
+  it("delete_node with missing params throws error", () => {
+    expect(() => executeTool("delete_node", {})).toThrow("Missing required");
+  });
+
+  it("delete_file with missing path throws error", () => {
+    expect(() => executeTool("delete_file", {})).toThrow("Missing required");
+  });
+
+  it("validate_scene with missing path throws error", () => {
+    expect(() => executeTool("validate_scene", {})).toThrow("Missing required");
+  });
+
+  it("validate_project with missing path throws error", () => {
+    expect(() => executeTool("validate_project", {})).toThrow("Missing required");
   });
 });

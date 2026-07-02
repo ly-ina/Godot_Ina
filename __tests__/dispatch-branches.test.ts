@@ -9,13 +9,10 @@ const godotFile = path.join(path.resolve("test-fixtures/scenes"), "project.godot
 
 describe("dispatch tool branches", () => {
   // Ensure project.godot exists for tests that need it
-  beforeAll(() => {
+  beforeEach(() => {
     if (!fs.existsSync(godotFile)) {
       fs.writeFileSync(godotFile, "; test\nconfig_version=5\n", "utf-8");
     }
-  });
-  afterAll(() => {
-    try { fs.unlinkSync(godotFile); } catch {}
   });
 
   it("read_scene works with valid path", () => {
@@ -70,5 +67,19 @@ describe("dispatch tool branches", () => {
     // Should try to find godot and fail gracefully
     const r = executeTool("run_project", { project_path: path.resolve("test-fixtures/scenes"), mode: "headless" });
     expect(r.content[0].text).toBeDefined();
+  });
+
+  it("edit_script dispatch works via dispatch", () => {
+    const tmp = path.resolve("test-fixtures/scenes/__dispatch_edit.gd");
+    try {
+      fs.writeFileSync(tmp, 'extends Node2D\n\nfunc _ready():\n\tpass\n', "utf-8");
+      const r = executeTool("edit_script", {
+        script_path: tmp,
+        replacements: [{ search: "pass", replace: "print(\"hello\")" }],
+      });
+      expect(r.content[0].text).toContain("Changes applied: 1");
+    } finally {
+      try { fs.unlinkSync(tmp); } catch {}
+    }
   });
 });

@@ -16,7 +16,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  try { fs.unlinkSync(MOCK_PROJECT_GODOT); } catch {}
+  // Keep project.godot — other test files depend on it, so don't delete
+  // Tests that need it will create it in their own beforeEach
 });
 
 describe("runGodotProject", () => {
