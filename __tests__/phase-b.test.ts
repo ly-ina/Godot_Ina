@@ -1,8 +1,8 @@
 // Tests for Phase B tools: analyze_project, generate_component
 import { describe, it, expect } from "vitest";
 import * as path from "path";
-import { analyzeProject } from "../src/tools/analyze_project.js";
-import { generateComponent } from "../src/tools/generate_component.js";
+import { analyzeProject } from "../src/tools/impl/analyze_project.js";
+import { generateComponent } from "../src/tools/impl/generate_component.js";
 import * as fs from "fs";
 
 const PROJECT_DIR = path.resolve("test-fixtures/scenes");

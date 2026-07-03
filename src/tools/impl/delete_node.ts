@@ -1,7 +1,7 @@
 // MCP Tool: delete_node — remove a node from a .tscn scene file
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree, countNodes } from "../utils/tree-utils.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
+import { findNodeInTree, countNodes } from "../../utils/tree-utils.js";
 import * as fs from "fs";
 import * as path from "path";
 

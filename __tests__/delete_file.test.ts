@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { deleteFile } from "../src/tools/delete_file.js";
+import { deleteFile } from "../src/tools/impl/delete_file.js";
 
 const TMP_FILE = path.resolve("test-fixtures/scripts/__to_delete.gd");
 const TMP_SCENE = path.resolve("test-fixtures/scenes/__to_delete.tscn");

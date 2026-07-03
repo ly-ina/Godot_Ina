@@ -1,5 +1,5 @@
 // MCP Tool: create_scene
-import { createEmptyScene, writeSceneToFile } from "../writers/tscn-writer.js";
+import { createEmptyScene, writeSceneToFile } from "../../writers/tscn-writer.js";
 import * as fs from "fs";
 import * as path from "path";
 

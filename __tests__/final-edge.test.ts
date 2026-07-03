@@ -7,10 +7,10 @@ import * as fs from "fs";
 import { parseTscnFile, parseGodotValue } from "../src/parsers/tscn-parser.js";
 
 // ── Tools ──
-import { readScene } from "../src/tools/read_scene.js";
-import { listScenes } from "../src/tools/list_scenes.js";
-import { addNode } from "../src/tools/add_node.js";
-import { createScene } from "../src/tools/create_scene.js";
+import { readScene } from "../src/tools/impl/read_scene.js";
+import { listScenes } from "../src/tools/impl/list_scenes.js";
+import { addNode } from "../src/tools/impl/add_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
 
 // ── Writers ──
 import { writeSceneToFile } from "../src/writers/tscn-writer.js";

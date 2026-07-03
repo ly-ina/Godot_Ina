@@ -1,8 +1,8 @@
 // Consolidated asset manager. Import, delete, list resources.
-import { importResource } from "./import_resource.js";
-import { deleteResource } from "./delete_resource.js";
-import { deleteFile } from "./delete_file.js";
-import { listResources } from "./list_resources.js";
+import { importResource } from "./impl/import_resource.js";
+import { deleteResource } from "./impl/delete_resource.js";
+import { deleteFile } from "./impl/delete_file.js";
+import { listResources } from "./impl/list_resources.js";
 
 export interface ManageAssetsArgs {
   /** Operation: import | delete_resource | delete_file | list */

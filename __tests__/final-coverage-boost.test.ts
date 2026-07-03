@@ -5,9 +5,9 @@ import * as fs from "fs";
 
 // ── Tool files ──
 import { runGodotProject } from "../src/tools/run_project.js";
-import { readScript } from "../src/tools/read_script.js";
-import { readScene } from "../src/tools/read_scene.js";
-import { listScenes, findTscnFiles, getFileInfo } from "../src/tools/list_scenes.js";
+import { readScript } from "../src/tools/impl/read_script.js";
+import { readScene } from "../src/tools/impl/read_scene.js";
+import { listScenes, findTscnFiles, getFileInfo } from "../src/tools/impl/list_scenes.js";
 import { executeTool } from "../src/tools/dispatch.js";
 
 // ── Writer files ──

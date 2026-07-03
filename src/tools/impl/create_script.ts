@@ -1,7 +1,7 @@
 // MCP Tool: create_script — create a .gd GDScript file, optionally attach to a scene node
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree } from "../utils/tree-utils.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
+import { findNodeInTree } from "../../utils/tree-utils.js";
 import * as fs from "fs";
 import * as path from "path";
 

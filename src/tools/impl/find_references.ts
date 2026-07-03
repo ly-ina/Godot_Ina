@@ -1,5 +1,5 @@
 // MCP Tool: find_references — find where a resource or script is referenced
-import { parseTscnFile } from "../parsers/tscn-parser.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
 import { listScenes } from "./list_scenes.js";
 import * as fs from "fs";
 

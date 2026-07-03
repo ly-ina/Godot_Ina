@@ -4,16 +4,16 @@ import * as path from "path";
 import * as fs from "fs";
 
 // ── create_scene.ts uncovered branches ──
-import { createScene, validateCreatedScene } from "../src/tools/create_scene.js";
+import { createScene, validateCreatedScene } from "../src/tools/impl/create_scene.js";
 
 // ── add_node.ts uncovered branches ──
-import { addNode } from "../src/tools/add_node.js";
+import { addNode } from "../src/tools/impl/add_node.js";
 
 // ── create_script.ts uncovered branches ──
-import { createScript } from "../src/tools/create_script.js";
+import { createScript } from "../src/tools/impl/create_script.js";
 
 // ── edit_node.ts uncovered branches ──
-import { editNode } from "../src/tools/edit_node.js";
+import { editNode } from "../src/tools/impl/edit_node.js";
 
 // ── tscn-writer.ts uncovered branches ──
 import { sceneToTscn, createEmptyScene, writeSceneToFile } from "../src/writers/tscn-writer.js";

@@ -1,8 +1,8 @@
 // MCP Tool: add_node — add a node to an existing scene
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { SceneNode } from "../parsers/tscn-types.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree } from "../utils/tree-utils.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { SceneNode } from "../../parsers/tscn-types.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
+import { findNodeInTree } from "../../utils/tree-utils.js";
 import * as fs from "fs";
 import * as path from "path";
 

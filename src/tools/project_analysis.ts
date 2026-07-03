@@ -1,9 +1,9 @@
 // Consolidated project analysis. Dispatches to original tools.
-import { searchNodes } from "./search_nodes.js";
-import { findReferences } from "./find_references.js";
-import { validateProject } from "./validate_project.js";
-import { analyzeProject } from "./analyze_project.js";
-import { listScenes } from "./list_scenes.js";
+import { searchNodes } from "./impl/search_nodes.js";
+import { findReferences } from "./impl/find_references.js";
+import { validateProject } from "./impl/validate_project.js";
+import { analyzeProject } from "./impl/analyze_project.js";
+import { listScenes } from "./impl/list_scenes.js";
 
 export interface AnalyzeArgs {
   action: "search_nodes" | "find_refs" | "validate" | "analyze" | "list_scenes";

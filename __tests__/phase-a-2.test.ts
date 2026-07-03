@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { batchEditScript } from "../src/tools/batch_edit_script.js";
+import { batchEditScript } from "../src/tools/impl/batch_edit_script.js";
 import { initProject } from "../src/tools/init_project.js";
 
 const TMP_DIR = path.resolve("test-fixtures/__batch_test_project");

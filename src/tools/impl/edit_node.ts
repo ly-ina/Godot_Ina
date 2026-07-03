@@ -1,7 +1,7 @@
 // MCP Tool: edit_node — modify properties of a node in a .tscn scene
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree } from "../utils/tree-utils.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
+import { findNodeInTree } from "../../utils/tree-utils.js";
 import * as fs from "fs";
 import * as path from "path";
 

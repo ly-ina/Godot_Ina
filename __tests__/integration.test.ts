@@ -1,10 +1,10 @@
 // Integration tests: end-to-end workflows using actual tools
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { addNode } from "../src/tools/add_node.js";
-import { editNode } from "../src/tools/edit_node.js";
-import { createScene } from "../src/tools/create_scene.js";
-import { createScript } from "../src/tools/create_script.js";
-import { readScene } from "../src/tools/read_scene.js";
+import { addNode } from "../src/tools/impl/add_node.js";
+import { editNode } from "../src/tools/impl/edit_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
+import { createScript } from "../src/tools/impl/create_script.js";
+import { readScene } from "../src/tools/impl/read_scene.js";
 import { parseTscnFile } from "../src/parsers/tscn-parser.js";
 import { writeSceneToFile } from "../src/writers/tscn-writer.js";
 import * as fs from "fs";

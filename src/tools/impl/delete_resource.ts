@@ -2,7 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { parseTscnFile } from "../parsers/tscn-parser.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
 import { findTscnFiles } from "./list_scenes.js";
 
 export interface DeleteResourceArgs {

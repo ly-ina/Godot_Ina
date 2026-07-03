@@ -1,7 +1,7 @@
 // MCP Tool: validate_project — validate a Godot project for structural integrity
 import { findTscnFiles } from "./list_scenes.js";
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { validateScene } from "./validate_scene.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { validateScene } from "../validate_scene.js";
 import * as fs from "fs";
 import * as path from "path";
 

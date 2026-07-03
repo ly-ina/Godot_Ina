@@ -2,11 +2,11 @@
 import { describe, it, expect, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
-import { importResource } from "../src/tools/import_resource.js";
-import { deleteResource } from "../src/tools/delete_resource.js";
-import { renameNode } from "../src/tools/rename_node.js";
-import { createScene } from "../src/tools/create_scene.js";
-import { addNode } from "../src/tools/add_node.js";
+import { importResource } from "../src/tools/impl/import_resource.js";
+import { deleteResource } from "../src/tools/impl/delete_resource.js";
+import { renameNode } from "../src/tools/impl/rename_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
+import { addNode } from "../src/tools/impl/add_node.js";
 import { parseTscnFile } from "../src/parsers/tscn-parser.js";
 
 const TMP = path.resolve("test-fixtures/scenes");

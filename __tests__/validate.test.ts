@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import * as path from "path";
 import { validateScene } from "../src/tools/validate_scene.js";
-import { validateProject } from "../src/tools/validate_project.js";
+import { validateProject } from "../src/tools/impl/validate_project.js";
 
 const SCENES_DIR = path.resolve("test-fixtures/scenes");
 const WORLD_TSCN = path.join(SCENES_DIR, "World.tscn");

@@ -5,7 +5,7 @@ import { parseSceneFile } from "../parsers/versioned-parser.js";
 import { writeSceneToFile } from "../writers/tscn-writer.js";
 import { detectVersionFromProject } from "../adapters/adapter.js";
 import { translateGDScript } from "../adapters/v3/gdscript_translator.js";
-import { findTscnFiles } from "./list_scenes.js";
+import { findTscnFiles } from "./impl/list_scenes.js";
 
 export interface TranslateProjectArgs {
   /** Path to the Godot project to translate */

@@ -1,7 +1,7 @@
 // Additional coverage tests for tools and utilities
 import { describe, it, expect } from "vitest";
-import { listScenes } from "../src/tools/list_scenes.js";
-import { readScene } from "../src/tools/read_scene.js";
+import { listScenes } from "../src/tools/impl/list_scenes.js";
+import { readScene } from "../src/tools/impl/read_scene.js";
 import { isValidNodeType } from "../src/utils/tree-utils.js";
 import { createEmptyScene } from "../src/writers/tscn-writer.js";
 import * as path from "path";

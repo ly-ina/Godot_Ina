@@ -3,7 +3,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { generateAnimation } from "./generate_animation.js";
-import { initProject } from "./init_project.js";
+import { initProject } from "../init_project.js";
 
 export interface DemoCharacterArgs {
   /** Path to Godot project root (created if doesn't exist) */

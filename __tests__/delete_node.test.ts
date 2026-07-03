@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
-import { deleteNode } from "../src/tools/delete_node.js";
-import { createScene } from "../src/tools/create_scene.js";
-import { addNode } from "../src/tools/add_node.js";
+import { deleteNode } from "../src/tools/impl/delete_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
+import { addNode } from "../src/tools/impl/add_node.js";
 import { parseTscnFile } from "../src/parsers/tscn-parser.js";
 
 const TMP_SCENE = path.resolve("test-fixtures/scenes/__delete_test.tscn");

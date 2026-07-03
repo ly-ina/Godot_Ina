@@ -1,8 +1,8 @@
 // Consolidated script editor. Dispatches to old edit_script tool.
-import { editScript as oldEdit } from "./edit_script_orig.js";
-import { createScript } from "./create_script.js";
-import { readScript } from "./read_script.js";
-import { batchEditScript } from "./batch_edit_script.js";
+import { editScript as oldEdit } from "./impl/edit_script_orig.js";
+import { createScript } from "./impl/create_script.js";
+import { readScript } from "./impl/read_script.js";
+import { batchEditScript } from "./impl/batch_edit_script.js";
 
 export interface EditScriptArgs {
   action: "create" | "read" | "edit" | "batch";

@@ -1,8 +1,8 @@
 // MCP Tool: rename_node — rename a node in a .tscn scene and update references
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
-import { findNodeInTree } from "../utils/tree-utils.js";
-import type { SceneNode, Connection } from "../parsers/tscn-types.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
+import { findNodeInTree } from "../../utils/tree-utils.js";
+import type { SceneNode, Connection } from "../../parsers/tscn-types.js";
 import * as fs from "fs";
 import * as path from "path";
 

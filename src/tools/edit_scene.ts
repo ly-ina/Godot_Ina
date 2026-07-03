@@ -1,11 +1,11 @@
 // Consolidated scene editor. CRUD operations on scenes and nodes.
-import { createScene } from "./create_scene.js";
-import { readScene } from "./read_scene.js";
-import { listScenes } from "./list_scenes.js";
-import { addNode } from "./add_node.js";
-import { editNode } from "./edit_node.js";
-import { deleteNode } from "./delete_node.js";
-import { renameNode } from "./rename_node.js";
+import { createScene } from "./impl/create_scene.js";
+import { readScene } from "./impl/read_scene.js";
+import { listScenes } from "./impl/list_scenes.js";
+import { addNode } from "./impl/add_node.js";
+import { editNode } from "./impl/edit_node.js";
+import { deleteNode } from "./impl/delete_node.js";
+import { renameNode } from "./impl/rename_node.js";
 import { validateScene } from "./validate_scene.js";
 
 export interface EditSceneArgs {

@@ -2,12 +2,12 @@
 import { describe, it, expect } from "vitest";
 import { parseTscnFile, parseGodotValue } from "../src/parsers/tscn-parser.js";
 import { createEmptyScene, sceneToTscn } from "../src/writers/tscn-writer.js";
-import { addNode } from "../src/tools/add_node.js";
-import { editNode } from "../src/tools/edit_node.js";
-import { createScene } from "../src/tools/create_scene.js";
-import { readScene } from "../src/tools/read_scene.js";
-import { readScript } from "../src/tools/read_script.js";
-import { createScript } from "../src/tools/create_script.js";
+import { addNode } from "../src/tools/impl/add_node.js";
+import { editNode } from "../src/tools/impl/edit_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
+import { readScene } from "../src/tools/impl/read_scene.js";
+import { readScript } from "../src/tools/impl/read_script.js";
+import { createScript } from "../src/tools/impl/create_script.js";
 import * as path from "path";
 
 const FIXTURES = path.resolve("test-fixtures/scenes");

@@ -1,4 +1,4 @@
-import { parseSceneFile } from "../parsers/versioned-parser.js";
+import { parseSceneFile } from "../../parsers/versioned-parser.js";
 import * as fs from "fs";
 
 export interface ReadSceneResult {

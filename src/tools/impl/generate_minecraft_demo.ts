@@ -2,8 +2,8 @@
 // Colors and sizes from shared theme config for consistency with other generators.
 import * as fs from "fs";
 import * as path from "path";
-import { initProject } from "./init_project.js";
-import { PLAYER, WORLD, SKY, GROUND } from "../config/game-theme.js";
+import { initProject } from "../init_project.js";
+import { PLAYER, WORLD, SKY, GROUND } from "../../config/game-theme.js";
 
 export interface GenerateMinecraftDemoArgs {
   project_path: string;

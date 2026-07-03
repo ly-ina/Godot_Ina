@@ -1,9 +1,9 @@
 // MCP Tool: analyze_project — comprehensive project analysis for AI-driven development
 import * as fs from "fs";
 import * as path from "path";
-import { parseTscnFile } from "../parsers/tscn-parser.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
 import { findTscnFiles } from "./list_scenes.js";
-import type { SceneNode, ExtResource, Connection } from "../parsers/tscn-types.js";
+import type { SceneNode, ExtResource, Connection } from "../../parsers/tscn-types.js";
 
 export interface AnalyzeProjectArgs {
   /** Path to Godot project root */

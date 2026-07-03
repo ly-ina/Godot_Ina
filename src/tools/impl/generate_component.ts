@@ -6,8 +6,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { createScene } from "./create_scene.js";
 import { addNode } from "./add_node.js";
-import { parseTscnFile } from "../parsers/tscn-parser.js";
-import { writeSceneToFile } from "../writers/tscn-writer.js";
+import { parseTscnFile } from "../../parsers/tscn-parser.js";
+import { writeSceneToFile } from "../../writers/tscn-writer.js";
 
 export interface GenerateComponentArgs {
   /** Path to Godot project root */

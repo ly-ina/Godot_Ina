@@ -1,6 +1,6 @@
 // Consolidated project settings. Read/write project.godot.
-import { readProjectSettings } from "./read_project_settings.js";
-import { editProjectSettings } from "./edit_project_settings.js";
+import { readProjectSettings } from "./impl/read_project_settings.js";
+import { editProjectSettings } from "./impl/edit_project_settings.js";
 
 export interface EditSettingsArgs {
   /** Operation: read | write */

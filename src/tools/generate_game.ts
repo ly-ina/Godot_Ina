@@ -1,16 +1,16 @@
 // Consolidated game system generator. Call with type to generate specific systems.
 // Colors and dimensions from shared theme config (src/config/game-theme.ts) for consistency.
-import { generateComponent } from "./generate_component.js";
-import { generateTerrain } from "./generate_terrain.js";
-import { generateBehaviorTree } from "./generate_behavior_tree.js";
-import { generateEquipmentSystem } from "./generate_equipment_system.js";
-import { generateSceneTransition } from "./generate_scene_transition.js";
-import { generateSlgMap } from "./generate_slg_map.js";
-import { generateExampleProject } from "./generate_example_project.js";
-import { generateAnimation } from "./generate_animation.js";
-import { generateSprite } from "./generate_sprite.js";
-import { demoCharacter } from "./demo_character.js";
-import { generateMinecraftDemo } from "./generate_minecraft_demo.js";
+import { generateComponent } from "./impl/generate_component.js";
+import { generateTerrain } from "./impl/generate_terrain.js";
+import { generateBehaviorTree } from "./impl/generate_behavior_tree.js";
+import { generateEquipmentSystem } from "./impl/generate_equipment_system.js";
+import { generateSceneTransition } from "./impl/generate_scene_transition.js";
+import { generateSlgMap } from "./impl/generate_slg_map.js";
+import { generateExampleProject } from "./impl/generate_example_project.js";
+import { generateAnimation } from "./impl/generate_animation.js";
+import { generateSprite } from "./impl/generate_sprite.js";
+import { demoCharacter } from "./impl/demo_character.js";
+import { generateMinecraftDemo } from "./impl/generate_minecraft_demo.js";
 import { PluginRegistry } from "./plugin-registry.js";
 import { PLAYER, NPC, WORLD, BLOCK_COLORS, SKY, GROUND } from "../config/game-theme.js";
 

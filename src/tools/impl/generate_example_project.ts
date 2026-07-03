@@ -2,7 +2,7 @@
 // Generates ready-to-run game projects for common genres.
 import * as fs from "fs";
 import * as path from "path";
-import { initProject } from "./init_project.js";
+import { initProject } from "../init_project.js";
 
 export interface GenerateExampleProjectArgs {
   /** Path where the example project should be created */

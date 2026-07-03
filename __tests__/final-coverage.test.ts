@@ -1,7 +1,7 @@
 // Final coverage push — targets remaining gaps
 import { describe, it, expect } from "vitest";
-import { createScene } from "../src/tools/create_scene.js";
-import { addNode } from "../src/tools/add_node.js";
+import { createScene } from "../src/tools/impl/create_scene.js";
+import { addNode } from "../src/tools/impl/add_node.js";
 import * as path from "path";
 import * as fs from "fs";
 
