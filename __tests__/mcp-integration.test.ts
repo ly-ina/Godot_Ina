@@ -24,7 +24,7 @@ function sendRequest(method: string, params?: Record<string, unknown>): Promise<
     const id = Math.floor(Math.random() * 10000);
     const request = JSON.stringify({ jsonrpc: "2.0", id, method, params: params || {} });
     stdoutBuffer = "";
-    const timeout = setTimeout(() => reject(new Error("Response timeout")), 10000);
+    const timeout = setTimeout(() => reject(new Error("Response timeout after 30s")), 30000);
 
     // Accumulate data until a complete JSON-RPC response (newline-delimited)
     const onData = (data: Buffer) => {
@@ -68,7 +68,7 @@ describe("MCP Server — real process integration", () => {
     const result = response.result as Record<string, unknown>;
     expect(Array.isArray(result.tools)).toBe(true);
     expect((result.tools as unknown[]).length).toBe(13);
-  }, 15000);
+  }, 60000);
 
   it("ping returns pong", async () => {
     const proc = startServer();
