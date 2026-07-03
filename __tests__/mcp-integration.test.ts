@@ -105,6 +105,6 @@ describe("MCP tool definitions (direct import)", () => {
   it("exports 13 consolidated tools", async () => {
     const mod = await import("../dist/tools/dispatch.js");
     const tools = mod.getToolDefinitions();
-    expect(tools.length).toBe(13);
+    expect(tools.length).toBe(16);
   });
 });

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。13 个核心工具，286 个测试。
+让 AI 直接读写 Godot 项目文件。16 个核心工具，286 个测试。
 
 ---
 
@@ -48,6 +48,9 @@
 | `run_project` | 运行项目 + 执行 GDScript 片段 |
 | `analyze_project` | 跨场景搜索节点、查找引用、校验完整性 |
 | `manage_assets` | 资源导入/删除/列出 |
+| `search_code` | **跨文件搜索 GDScript 文本**（支持正则） |
+| `analyze_deps` | **分析资源依赖关系**（谁引用了谁） |
+| `batch_edit` | **批量改多个文件**（替换文本/节点类型/属性） |
 
 ### 游戏系统生成
 
@@ -120,7 +123,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 
 | 指标 | 数值 |
 |------|------|
-| 核心工具 | 13（合并自 37 个旧工具） |
+| 核心工具 | 16（合并自 37 个旧工具 + 3 个新增） |
 | 测试数 | 286（27 个文件） |
 | 行覆盖率 | 95% |
 | CI | Ubuntu / Windows / macOS（macOS 仅 Node 22） |

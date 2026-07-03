@@ -26,6 +26,9 @@ import { fetchAsset, type FetchAssetArgs } from "./fetch_asset.js";
 import { translateProject } from "./translate_project.js";
 import { validateScene } from "./validate_scene.js";
 import { cnError } from "./error-messages.js";
+import { searchCode, type SearchCodeArgs } from "./search_code.js";
+import { analyzeDeps, type AnalyzeDepsArgs } from "./analyze_deps.js";
+import { batchEdit, type BatchEditArgs } from "./batch_edit.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -273,6 +276,56 @@ export function getToolDefinitions(): ToolDefinition[] {
         properties: {},
       },
     },
+    {
+      name: "search_code",
+      description: "Search GDScript text across the project. Supports plain text and regex search.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Godot project root path" },
+          pattern: { type: "string", description: "Search pattern (plain text or regex)" },
+          regex: { type: "boolean", description: "Treat pattern as regex (default: false)" },
+          ignore_case: { type: "boolean", description: "Case insensitive (default: false)" },
+          glob: { type: "string", description: "File pattern (default: **/*.gd)" },
+          max_results: { type: "number", description: "Max results (default: 50)" },
+        },
+        required: ["project_path", "pattern"],
+      },
+    },
+    {
+      name: "analyze_deps",
+      description: "Analyze cross-file dependencies: find what references a resource, or list a scene's dependencies.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Godot project root path" },
+          resource_path: { type: "string", description: "Resource path to find references for (e.g. res://assets/player.png)" },
+          mode: { type: "string", enum: ["find_refs", "deps_of"], description: "find_refs (default): what references this resource? deps_of: what does this scene depend on?" },
+          scene_path: { type: "string", description: "Scene path (for deps_of mode)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "batch_edit",
+      description: "Batch operations across multiple files: replace text, replace node types, add properties, or list matching files.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Godot project root path" },
+          action: { type: "string", enum: ["list_files", "replace_text", "replace_node_type", "add_property"], description: "Operation type" },
+          glob: { type: "string", description: "File pattern (default: **/*.gd)" },
+          pattern: { type: "string", description: "Search pattern (for replace_text)" },
+          replacement: { type: "string", description: "Replacement text (for replace_text)" },
+          old_type: { type: "string", description: "Old node type (for replace_node_type)" },
+          new_type: { type: "string", description: "New node type (for replace_node_type)" },
+          property: { type: "string", description: "Property name (for add_property)" },
+          value: { type: "string", description: "Property value (for add_property)" },
+          dry_run: { type: "boolean", description: "Preview only — don't modify (default: false)" },
+        },
+        required: ["project_path", "action"],
+      },
+    },
   ];
 }
 
@@ -368,6 +421,50 @@ export function executeTool(name: string, args: unknown): ToolResponse {
     // --- ping ---
     if (name === "ping") {
       return { content: [{ type: "text", text: "pong" }] };
+    }
+
+    // --- search_code ---
+    if (name === "search_code") {
+      return {
+        content: [{ type: "text", text: searchCode({
+          project_path: parsedArgs.project_path as string,
+          pattern: parsedArgs.pattern as string,
+          regex: parsedArgs.regex as boolean | undefined,
+          ignore_case: parsedArgs.ignore_case as boolean | undefined,
+          glob: parsedArgs.glob as string | undefined,
+          max_results: parsedArgs.max_results as number | undefined,
+        }) }],
+      };
+    }
+
+    // --- analyze_deps ---
+    if (name === "analyze_deps") {
+      return {
+        content: [{ type: "text", text: analyzeDeps({
+          project_path: parsedArgs.project_path as string,
+          resource_path: parsedArgs.resource_path as string | undefined,
+          mode: parsedArgs.mode as "find_refs" | "deps_of" | undefined,
+          scene_path: parsedArgs.scene_path as string | undefined,
+        }) }],
+      };
+    }
+
+    // --- batch_edit ---
+    if (name === "batch_edit") {
+      return {
+        content: [{ type: "text", text: batchEdit({
+          project_path: parsedArgs.project_path as string,
+          action: parsedArgs.action as BatchEditArgs["action"],
+          glob: parsedArgs.glob as string | undefined,
+          pattern: parsedArgs.pattern as string | undefined,
+          replacement: parsedArgs.replacement as string | undefined,
+          old_type: parsedArgs.old_type as string | undefined,
+          new_type: parsedArgs.new_type as string | undefined,
+          property: parsedArgs.property as string | undefined,
+          value: parsedArgs.value as string | undefined,
+          dry_run: parsedArgs.dry_run as boolean | undefined,
+        }) }],
+      };
     }
 
     return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
