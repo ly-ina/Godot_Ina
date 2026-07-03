@@ -329,13 +329,15 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "launch_editor",
-      description: "Open Godot editor for manual visual editing (UI layout, animation, tileset). AI handles code, human handles visuals.",
+      description: "Open Godot editor for manual visual editing with task-specific tutorial (ui_layout/animation/tileset/material/signal/collision/lighting/general). AI handles code, human handles visuals.",
       inputSchema: {
         type: "object",
         properties: {
           project_path: { type: "string", description: "Godot project root path" },
-          scene_path: { type: "string", description: "Scene to open (optional, opens project root if omitted)" },
-          timeout: { type: "number", description: "Max wait in seconds (default: 300, 0 = infinite)" },
+          scene_path: { type: "string", description: "Scene/resource to open (optional)" },
+          mode: { type: "string", enum: ["ui_layout", "animation", "tileset", "material", "signal", "collision", "lighting", "general"], description: "Editing mode — determines the tutorial shown (default: general)" },
+          context: { type: "string", description: "What the AI just generated and why manual edit is needed" },
+          timeout: { type: "number", description: "Max wait in seconds (default: 600, 0 = infinite)" },
           detach: { type: "boolean", description: "Don't wait — just open and return immediately (default: false)" },
         },
         required: ["project_path"],
@@ -488,6 +490,8 @@ export function executeTool(name: string, args: unknown): ToolResponse {
         content: [{ type: "text", text: launchEditor({
           project_path: parsedArgs.project_path as string,
           scene_path: parsedArgs.scene_path as string | undefined,
+          mode: parsedArgs.mode as LaunchEditorArgs["mode"],
+          context: parsedArgs.context as string | undefined,
           timeout: parsedArgs.timeout as number | undefined,
           detach: parsedArgs.detach as boolean | undefined,
         }) }],
