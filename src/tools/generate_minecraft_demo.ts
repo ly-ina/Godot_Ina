@@ -1,7 +1,9 @@
 // MCP Tool: generate_minecraft_demo — generates a complete, working 2D Minecraft-like game
+// Colors and sizes from shared theme config for consistency with other generators.
 import * as fs from "fs";
 import * as path from "path";
 import { initProject } from "./init_project.js";
+import { PLAYER, WORLD, SKY, GROUND } from "../config/game-theme.js";
 
 export interface GenerateMinecraftDemoArgs {
   project_path: string;
@@ -259,39 +261,47 @@ func upd(bar: Array, sel: int, inv: Dictionary) -> void:
 `;
   fs.writeFileSync(path.join(scriptsDir, "hud.gd"), hudGd, "utf-8");
 
-  // ── Main.tscn ──
-  // FIX 2026-07-03: CollisionShape2D moved to y=-26 so collision bottom aligns with visual foot
+  // ── Main.tscn — uses shared theme config values ──
+  const [sr, sg, sb] = SKY.DAY;
+  const [gr, gg, gb] = GROUND.GRASS;
+  const [br, bg, bb] = PLAYER.BODY_COLOR;
+  const [hr, hg, hb] = PLAYER.HEAD_COLOR;
+  const bodyW = PLAYER.BODY_WIDTH;
+  const bodyH = PLAYER.BODY_HEIGHT;
+  const headW = PLAYER.HEAD_WIDTH;
+  const headH = PLAYER.HEAD_HEIGHT;
+
   const tscn = [
     `[gd_scene load_steps=5 format=3 uid="uid://mc_demo_gen"]`,
     `[ext_resource type="Script" path="res://scripts/player.gd" id="1"]`,
     `[ext_resource type="Script" path="res://scripts/hud.gd" id="2"]`,
     `[ext_resource type="Script" path="res://scripts/world.gd" id="3"]`,
     `[sub_resource type="RectangleShape2D" id="PS"]`,
-    `size = Vector2(24, 52)`,
+    `size = Vector2(${bodyW}, ${bodyH})`,
     `[node name="Main" type="Node2D"]`,
     `[node name="Sky" type="ColorRect" parent="."]`,
     `anchor_right = 1.0`,
     `anchor_bottom = 1.0`,
-    `color = Color(0.5, 0.65, 0.85, 1)`,
+    `color = Color(${sr}, ${sg}, ${sb}, 1)`,
     `[node name="World" type="TileMap" parent="."]`,
     `script = ExtResource("3")`,
     `[node name="Player" type="CharacterBody2D" parent="."]`,
     `script = ExtResource("1")`,
     `[node name="Body" type="ColorRect" parent="Player"]`,
-    `offset_left = -12`,
-    `offset_top = -52`,
-    `offset_right = 12`,
+    `offset_left = ${-bodyW / 2}`,
+    `offset_top = ${-bodyH}`,
+    `offset_right = ${bodyW / 2}`,
     `offset_bottom = 0`,
-    `color = Color(0.3, 0.5, 0.8, 1)`,
+    `color = Color(${br}, ${bg}, ${bb}, 1)`,
     `[node name="Head" type="ColorRect" parent="Player"]`,
-    `offset_left = -10`,
-    `offset_top = -65`,
-    `offset_right = 10`,
-    `offset_bottom = -52`,
-    `color = Color(0.85, 0.7, 0.5, 1)`,
+    `offset_left = ${-headW / 2}`,
+    `offset_top = ${-(bodyH + headH)}`,
+    `offset_right = ${headW / 2}`,
+    `offset_bottom = ${-bodyH}`,
+    `color = Color(${hr}, ${hg}, ${hb}, 1)`,
     `[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]`,
     `shape = SubResource("PS")`,
-    `position = Vector2(0, -26)`,
+    `position = Vector2(0, ${-bodyH / 2})`,
     `[node name="Camera2D" type="Camera2D" parent="Player"]`,
     `position_smoothing_enabled = true`,
     `position_smoothing_speed = 6.0`,
