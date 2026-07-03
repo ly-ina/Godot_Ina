@@ -261,6 +261,10 @@ describe("create_script uncovered paths", () => {
   const scriptDir = path.resolve("test-fixtures/scripts");
   const scriptPath = path.join(scriptDir, "__cov_test.gd");
 
+  beforeAll(() => {
+    fs.mkdirSync(scriptDir, { recursive: true });
+  });
+
   afterEach(() => {
     if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
     // Also clean up test scene if modified
