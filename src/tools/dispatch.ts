@@ -29,6 +29,7 @@ import { cnError } from "./error-messages.js";
 import { searchCode, type SearchCodeArgs } from "./search_code.js";
 import { analyzeDeps, type AnalyzeDepsArgs } from "./analyze_deps.js";
 import { batchEdit, type BatchEditArgs } from "./batch_edit.js";
+import { launchEditor, type LaunchEditorArgs } from "./launch_editor.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -326,6 +327,20 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path", "action"],
       },
     },
+    {
+      name: "launch_editor",
+      description: "Open Godot editor for manual visual editing (UI layout, animation, tileset). AI handles code, human handles visuals.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Godot project root path" },
+          scene_path: { type: "string", description: "Scene to open (optional, opens project root if omitted)" },
+          timeout: { type: "number", description: "Max wait in seconds (default: 300, 0 = infinite)" },
+          detach: { type: "boolean", description: "Don't wait — just open and return immediately (default: false)" },
+        },
+        required: ["project_path"],
+      },
+    },
   ];
 }
 
@@ -463,6 +478,18 @@ export function executeTool(name: string, args: unknown): ToolResponse {
           property: parsedArgs.property as string | undefined,
           value: parsedArgs.value as string | undefined,
           dry_run: parsedArgs.dry_run as boolean | undefined,
+        }) }],
+      };
+    }
+
+    // --- launch_editor ---
+    if (name === "launch_editor") {
+      return {
+        content: [{ type: "text", text: launchEditor({
+          project_path: parsedArgs.project_path as string,
+          scene_path: parsedArgs.scene_path as string | undefined,
+          timeout: parsedArgs.timeout as number | undefined,
+          detach: parsedArgs.detach as boolean | undefined,
         }) }],
       };
     }

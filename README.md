@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。16 个核心工具，286 个测试。
+让 AI 直接读写 Godot 项目文件。17 个核心工具，286 个测试。
 
 ---
 
@@ -66,6 +66,7 @@
 | 工具 | 作用 |
 |------|------|
 | `translate_project` | Godot 3.x 项目一键转 4.x |
+| `launch_editor` | **打开 Godot 编辑器**（AI 做代码，你拖 UI） |
 | `ping` | 连通性检查 |
 
 ---

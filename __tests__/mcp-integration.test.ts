@@ -102,9 +102,9 @@ describe("MCP Server — real process integration", () => {
 
 // Direct module-level test for exact tool count — faster than spawning a server
 describe("MCP tool definitions (direct import)", () => {
-  it("exports 13 consolidated tools", async () => {
+  it("exports 17 tools", async () => {
     const mod = await import("../dist/tools/dispatch.js");
     const tools = mod.getToolDefinitions();
-    expect(tools.length).toBe(16);
+    expect(tools.length).toBe(17);
   });
 });
