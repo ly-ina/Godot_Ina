@@ -57,7 +57,7 @@
 
 | 指标 | 数值 |
 |------|------|
-| 工具数 | 13（合并自 37 个旧工具） |
+| 工具数 | 13（合并自 37 个旧工具 + 插件系统） |
 | 测试数 | 285（27 个文件） |
 | 行覆盖率 | 95% |
 | CI | GitHub Actions（Node 20/22，Ubuntu 24.04） |
@@ -149,11 +149,11 @@ src/
 - [x] 3D 场景基础支持（地形、碰撞、摄像机控制）→ `generate_scene_3d`
 - [x] Godot Asset Library 集成（一键搜索下载）→ `fetch_asset`
 
-#### 阶段 D — 生态
+#### 阶段 D — 生态（进行中）
+- [x] Godot 编辑器插件（`addons/godot-mcp/plugin.gd`，编辑器内启停 MCP）
+- [x] 第三方工具扩展（`PluginRegistry` + `plugin_loader.ts` + 示例插件）
+- [x] 可视化场景预览（`web/preview.html`，浏览器查看场景树）
 - [ ] npm 发布（`npx godot-mcp-server` 直接使用）
-- [ ] Godot 编辑器插件模式（非 CLI，在编辑器内运行）
-- [ ] 第三方工具扩展机制
-- [ ] 可视化场景预览（Web UI）
 
 ---
 
