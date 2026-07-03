@@ -74,3 +74,20 @@ demo-output/
 
 # Accidentals
 *.exe
+
+# 独立仓库（不在主仓库维护）
+addons/
+web/
+
+# Build artifacts / junk
+coverage/
+debug.log
+NUL
+docs/
+
+# 独立仓库（不在主仓库维护）
+addons/
+web/
+
+# Empty or out-of-date
+CONTRIBUTING.md
