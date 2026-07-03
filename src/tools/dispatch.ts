@@ -1,44 +1,26 @@
-// MCP Tool dispatch logic — extracted for testability
-import { listScenes } from "./list_scenes.js";
-import type { SceneInfo } from "./list_scenes.js";
-import { readScene } from "./read_scene.js";
-import { createScene } from "./create_scene.js";
-import { readScript } from "./read_script.js";
-import { addNode } from "./add_node.js";
-import { editNode } from "./edit_node.js";
-import { createScript } from "./create_script.js";
-import { editScript } from "./edit_script.js";
-import { deleteNode } from "./delete_node.js";
-import { deleteFile } from "./delete_file.js";
-import { validateScene } from "./validate_scene.js";
-import { validateProject } from "./validate_project.js";
-import { executeGDScript } from "./execute_gdscript.js";
-import { listResources } from "./list_resources.js";
-import { readProjectSettings } from "./read_project_settings.js";
-import { editProjectSettings } from "./edit_project_settings.js";
-import { searchNodes } from "./search_nodes.js";
-import { findReferences } from "./find_references.js";
-import { importResource } from "./import_resource.js";
-import { deleteResource } from "./delete_resource.js";
-import { renameNode } from "./rename_node.js";
-import { batchEditScript } from "./batch_edit_script.js";
+// MCP Tool dispatch logic — 10 consolidated tools
+// Previously 37 tools were split into fine-grained operations.
+// Now organized by game development workflow:
+//   1. init_project     — Create project skeleton
+//   2. edit_scene       — CRUD scenes & nodes
+//   3. edit_script      — CRUD scripts
+//   4. edit_settings    — Read/write project.godot
+//   5. generate_game    — Generate complete game systems
+//   6. run_project      — Run/test with Godot CLI + execute GDScript
+//   7. analyze_project  — Search, find refs, validate, analyze
+//   8. manage_assets    — Import, delete assets
+//   9. translate_project— 3.x → 4.x converter
+//   10. ping            — Health check
 import { initProject } from "./init_project.js";
-import { analyzeProject } from "./analyze_project.js";
-import { generateComponent } from "./generate_component.js";
-import { generateTerrain } from "./generate_terrain.js";
-import { generateBehaviorTree } from "./generate_behavior_tree.js";
-import { generateEquipmentSystem } from "./generate_equipment_system.js";
-import { generateSceneTransition } from "./generate_scene_transition.js";
-import { generateSlgMap } from "./generate_slg_map.js";
-import { generateExampleProject } from "./generate_example_project.js";
-import { translateProject } from "./translate_project.js";
-import { generateAnimation } from "./generate_animation.js";
-import { demoCharacter } from "./demo_character.js";
-import { generateSprite, GenerateSpriteArgs } from "./generate_sprite.js";
-import { generateMinecraftDemo, GenerateMinecraftDemoArgs } from "./generate_minecraft_demo.js";
-import type { GenerateTerrainArgs } from "./generate_terrain.js";
-import type { GenerateBehaviorTreeArgs } from "./generate_behavior_tree.js";
+import { editScene, type EditSceneArgs } from "./edit_scene.js";
+import { editScriptFn, type EditScriptArgs } from "./script_editor.js";
+import { editSettings, type EditSettingsArgs } from "./edit_settings.js";
+import { generateGame, type GenerateGameArgs } from "./generate_game.js";
 import { runGodotProject } from "./run_project.js";
+import { executeGDScript } from "./execute_gdscript.js";
+import { analyzeProjectFn, type AnalyzeArgs } from "./project_analysis.js";
+import { manageAssets, type ManageAssetsArgs } from "./manage_assets.js";
+import { translateProject } from "./translate_project.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -52,535 +34,198 @@ export interface ToolDefinition {
 }
 
 /**
- * List all available tool definitions (for tools/list)
+ * Parse the args object from MCP JSON input.
+ * Handles both `args` (direct) and `args.args` (nested) formats.
+ */
+function parseArgs(args: unknown): Record<string, unknown> {
+  if (!args || typeof args !== "object") return {};
+  const a = args as Record<string, unknown>;
+  // Some MCP clients nest args
+  return (a.args && typeof a.args === "object" ? a.args : a) as Record<string, unknown>;
+}
+
+/**
+ * Get the tool list for MCP tools/list response
  */
 export function getToolDefinitions(): ToolDefinition[] {
   return [
     {
-      name: "ping",
-      description: "Test connectivity - returns 'pong'",
-      inputSchema: { type: "object", properties: {}, required: [] },
-    },
-    {
-      name: "list_scenes",
-      description: "List all .tscn scene files in a Godot project",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root (optional, defaults to current directory)" },
-        },
-        required: [],
-      },
-    },
-    {
-      name: "read_scene",
-      description: "Read and parse a .tscn scene file",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file to read" },
-        },
-        required: ["scene_path"],
-      },
-    },
-    {
-      name: "create_scene",
-      description: "Create a new .tscn scene file with specified root node",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to save the new .tscn scene file" },
-          root_node_name: { type: "string", description: "Name of the root node" },
-          root_node_type: { type: "string", description: "Type of the root node" },
-          project_path: { type: "string", description: "Godot project root path (optional)" },
-        },
-        required: ["scene_path", "root_node_name", "root_node_type"],
-      },
-    },
-    {
-      name: "read_script",
-      description: "Read a .gd GDScript file and return its content",
-      inputSchema: {
-        type: "object",
-        properties: {
-          script_path: { type: "string", description: "Path to the .gd script file to read" },
-        },
-        required: ["script_path"],
-      },
-    },
-    {
-      name: "add_node",
-      description: "Add a new node to an existing .tscn scene",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file" },
-          parent_node_name: { type: "string", description: "Name of the parent node (use '.' for root level)" },
-          node_type: { type: "string", description: "Type of the new node" },
-          node_name: { type: "string", description: "Name for the new node (must be unique)" },
-          properties: { type: "object", description: "Optional initial properties", additionalProperties: true },
-        },
-        required: ["scene_path", "parent_node_name", "node_type", "node_name"],
-      },
-    },
-    {
-      name: "edit_node",
-      description: "Modify properties of a node in a .tscn scene",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file" },
-          node_name: { type: "string", description: "Name of the node to edit" },
-          properties: { type: "object", description: "Properties to update", additionalProperties: true },
-        },
-        required: ["scene_path", "node_name", "properties"],
-      },
-    },
-    {
-      name: "create_script",
-      description: "Create a new .gd GDScript file, optionally attaching it to a scene node",
-      inputSchema: {
-        type: "object",
-        properties: {
-          script_path: { type: "string", description: "Path to save the .gd script file" },
-          content: { type: "string", description: "GDScript code content to write" },
-          scene_path: { type: "string", description: "Optional: Path to .tscn scene to attach the script" },
-          node_name: { type: "string", description: "Optional: Name of the node to attach" },
-        },
-        required: ["script_path", "content"],
-      },
-    },
-    {
-      name: "edit_script",
-      description: "Modify an existing .gd GDScript file using search/replace. Specify one or more replacements, each with a 'search' string and 'replace' string. Creates an automatic backup (.bak) before making changes.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          script_path: { type: "string", description: "Path to the .gd script file to modify" },
-          replacements: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                search: { type: "string", description: "Exact string to search for (case-sensitive)" },
-                replace: { type: "string", description: "String to replace the matched text with" },
-              },
-              required: ["search", "replace"],
-            },
-            description: "Array of search/replace operations (applied in order)",
-          },
-          create_backup: { type: "boolean", description: "Whether to create a .bak backup before editing (default: true)" },
-        },
-        required: ["script_path", "replacements"],
-      },
-    },
-    {
-      name: "run_project",
-      description: "Run a Godot project using the Godot CLI (detects Godot executable automatically)",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root (must contain project.godot)" },
-          mode: { type: "string", enum: ["normal", "headless", "debug"], description: "Run mode (optional)" },
-          extra_args: { type: "array", items: { type: "string" }, description: "Optional extra CLI arguments" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "delete_node",
-      description: "Remove a node from a .tscn scene file. By default refuses to delete nodes with children — use recursive: true to force.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file" },
-          node_name: { type: "string", description: "Name of the node to delete" },
-          recursive: { type: "boolean", description: "Whether to delete child nodes as well (default: false)" },
-        },
-        required: ["scene_path", "node_name"],
-      },
-    },
-    {
-      name: "delete_file",
-      description: "Delete a Godot project file (.tscn, .gd, .import). By default moves to trash instead of permanent deletion.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          file_path: { type: "string", description: "Path to the file to delete" },
-          use_trash: { type: "boolean", description: "Move to trash instead of permanent delete (default: true)" },
-        },
-        required: ["file_path"],
-      },
-    },
-    {
-      name: "validate_scene",
-      description: "Validate a .tscn scene file for structural integrity — checks header, root node, duplicate names, resource references.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file" },
-          project_path: { type: "string", description: "Optional project root for reference resolution" },
-        },
-        required: ["scene_path"],
-      },
-    },
-    {
-      name: "validate_project",
-      description: "Validate an entire Godot project — checks project.godot, validates all scenes, resolves script references.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to the Godot project root" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "execute_gdscript",
-      description: "Execute GDScript code via Godot CLI and return the output. Creates a temporary script file, runs it in headless mode, and captures stdout.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          code: { type: "string", description: "GDScript code to execute" },
-          project_path: { type: "string", description: "Path to Godot project root" },
-          timeout: { type: "number", description: "Optional timeout in milliseconds (default: 30000)" },
-        },
-        required: ["code", "project_path"],
-      },
-    },
-    {
-      name: "list_resources",
-      description: "List resource files in a Godot project, optionally filtered by type (image, audio, font, scene, script).",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          type: { type: "string", enum: ["all", "image", "audio", "font", "scene", "script"], description: "Filter by resource type (default: all)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "read_project_settings",
-      description: "Read and display project.godot configuration, organized by section.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "edit_project_settings",
-      description: "Modify a setting in project.godot. Creates a .bak backup before saving.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          section: { type: "string", description: "Section name (e.g. application, rendering)" },
-          key: { type: "string", description: "Setting key (e.g. config/name, window/size/viewport_width)" },
-          value: { type: "string", description: "Value to set" },
-          type: { type: "string", enum: ["string", "int", "float", "bool"], description: "Optional type hint" },
-        },
-        required: ["project_path", "section", "key", "value"],
-      },
-    },
-    {
-      name: "search_nodes",
-      description: "Search for nodes across all scene files by type, name, or property.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          node_type: { type: "string", description: "Filter by node type (e.g. CharacterBody2D)" },
-          name_contains: { type: "string", description: "Filter by name (substring match)" },
-          has_property: { type: "string", description: "Filter by property name" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "find_references",
-      description: "Find where a resource or script is referenced across all scenes in a project.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          resource_path: { type: "string", description: "Resource path to search for (e.g. res://player.gd)" },
-        },
-        required: ["project_path", "resource_path"],
-      },
-    },
-    {
-      name: "import_resource",
-      description: "Import an external resource file (image, audio, font, 3D model, scene, script) into the Godot project.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          source_path: { type: "string", description: "Source file path to import from" },
-          dest_path: { type: "string", description: "Destination path inside the project" },
-          mkdir: { type: "boolean", description: "Create subdirectories if needed (default: true)" },
-        },
-        required: ["source_path", "dest_path"],
-      },
-    },
-    {
-      name: "delete_resource",
-      description: "Delete a resource file with safety checks. Scans all scenes for references before deleting.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          resource_path: { type: "string", description: "Path to the resource file to delete" },
-          project_path: { type: "string", description: "Godot project root (for reference checking)" },
-          force: { type: "boolean", description: "Skip reference check and force delete (default: false)" },
-          use_trash: { type: "boolean", description: "Move to trash instead of permanent delete (default: true)" },
-        },
-        required: ["resource_path", "project_path"],
-      },
-    },
-    {
-      name: "rename_node",
-      description: "Rename a node in a .tscn scene. Optionally updates child parent references and connection references.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          scene_path: { type: "string", description: "Path to the .tscn scene file" },
-          old_name: { type: "string", description: "Current name of the node" },
-          new_name: { type: "string", description: "New name for the node" },
-          update_parent_refs: { type: "boolean", description: "Update child node parent references (default: true)" },
-          update_connections: { type: "boolean", description: "Update connection references (default: true)" },
-        },
-        required: ["scene_path", "old_name", "new_name"],
-      },
-    },
-    {
-      name: "batch_edit_script",
-      description: "Search and replace text across multiple files (scripts, scenes, or both) in a Godot project. Creates backups automatically.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          search: { type: "string", description: "String to search for" },
-          replace: { type: "string", description: "String to replace with" },
-          file_type: { type: "string", enum: ["gd", "tscn", "all"], description: "File type to process (default: gd)" },
-          create_backup: { type: "boolean", description: "Create .bak backups (default: true)" },
-        },
-        required: ["project_path", "search", "replace"],
-      },
-    },
-    {
       name: "init_project",
-      description: "Create a new Godot 4.x project with standard directory structure, project.godot config, and an empty main scene.",
+      description: "Create a standard Godot 4 project skeleton at the specified path. Creates project.godot, default directories, and basic config.",
       inputSchema: {
         type: "object",
         properties: {
           project_path: { type: "string", description: "Path where the project should be created" },
-          project_name: { type: "string", description: "Project name (defaults to directory name)" },
-          width: { type: "number", description: "Viewport width (default: 1152)" },
-          height: { type: "number", description: "Viewport height (default: 648)" },
+          project_name: { type: "string", description: "Project name (default: MyGame)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "edit_scene",
+      description: "Create, read, modify, or delete scenes and their nodes. One tool replaces 8 old tools. Use `action` parameter to pick operation.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            enum: ["list", "read", "create", "add_node", "edit_node", "delete_node", "rename_node", "validate"],
+            description: "Operation to perform",
+          },
+          project_path: { type: "string", description: "Path to Godot project root" },
+          scene_path: { type: "string", description: "Path to scene file (relative, e.g. scenes/World.tscn)" },
+          scene_name: { type: "string", description: "Scene/root node name (for create)" },
+          scene_type: { type: "string", description: "Root node type (for create, default: Node2D)" },
+          node_name: { type: "string", description: "Node name (for add/delete/rename/edit_node)" },
+          node_type: { type: "string", description: "Node type (for add_node)" },
+          parent_path: { type: "string", description: "Parent node path (for add_node)" },
+          new_name: { type: "string", description: "New name (for rename_node)" },
+          properties: { type: "string", description: "JSON string of properties (for edit_node)" },
+        },
+        required: ["action"],
+      },
+    },
+    {
+      name: "edit_script",
+      description: "Create, read, or edit GDScript files. Also supports batch search-replace across multiple scripts.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            enum: ["create", "read", "edit", "batch"],
+            description: "Operation to perform",
+          },
+          project_path: { type: "string", description: "Path to Godot project root" },
+          script_path: { type: "string", description: "Path to script file (relative)" },
+          content: { type: "string", description: "Script content (for create)" },
+          extends: { type: "string", description: "Script base class (for create, default: Node)" },
+          pattern: { type: "string", description: "Search text (for edit/batch)" },
+          replacement: { type: "string", description: "Replacement text (for edit/batch)" },
+          bind_scene: { type: "string", description: "Scene path to bind this script to (for create)" },
+        },
+        required: ["action"],
+      },
+    },
+    {
+      name: "edit_settings",
+      description: "Read or write project.godot settings. Use `read` to get all settings, `write` to modify one.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["read", "write"], description: "Operation to perform" },
+          project_path: { type: "string", description: "Path to Godot project root" },
+          key: { type: "string", description: "Setting key (for write, e.g. config/name)" },
+          value: { type: "string", description: "Setting value (for write)" },
+          section: { type: "string", description: "Config section (for write, default: application)" },
+        },
+        required: ["action", "project_path"],
+      },
+    },
+    {
+      name: "generate_game",
+      description: "Generate complete game systems. One-stop tool for all game content generation. Use `type` to select system, pass extra params as needed.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: [
+              "component",       // 8 game components (player, enemy, collectible, etc.)
+              "terrain",         // Procedural terrain (Minecraft-style)
+              "behavior_tree",   // NPC with needs/personality AI
+              "equipment",       // Terraria-style equipment system
+              "scene_transition",// Stardew Valley-style area transitions
+              "slg_map",         // Strategy map with hex grid + A* pathfinding
+              "example_project", // Complete example project (4 templates)
+              "character_animation", // Character body + collision + camera
+              "character_demo",  // AI-driven character with procedural animation
+              "sprite",          // AI-generated character portrait (dialogue use)
+              "minecraft_demo",  // Complete 2D Minecraft-like playable demo
+            ],
+            description: "Type of game system to generate",
+          },
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "Name for the generated system" },
+          description: { type: "string", description: "Description (for sprite generation)" },
+          behavior: { type: "string", description: "AI behavior: wander|patrol|idle (for character_demo)" },
+          sprite_path: { type: "string", description: "Path to sprite image (for character gen)" },
+          region: { type: "string", description: 'Sprite region crop "x,y,w,h"' },
+          template: { type: "string", description: "Template name (for terrain/example_project)" },
+          extra: { type: "string", description: "Extra JSON parameters for complex generation" },
+        },
+        required: ["type", "project_path"],
+      },
+    },
+    {
+      name: "run_project",
+      description: "Run a Godot project in headless mode or execute a GDScript snippet. Requires GODOT_PATH environment variable.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          mode: { type: "string", enum: ["headless", "script"], description: "Run mode: headless (run project) or script (execute single script)" },
+          script: { type: "string", description: "GDScript source or file path (for script mode)" },
+          timeout: { type: "number", description: "Timeout in milliseconds (default: 10000)" },
         },
         required: ["project_path"],
       },
     },
     {
       name: "analyze_project",
-      description: "Comprehensive project analysis: scene inventory, node trees, script summaries, resource references, and structural insights. Essential for AI to understand project architecture.",
+      description: "Search, analyze, validate, or list scenes in a Godot project. Use `action` to pick operation.",
       inputSchema: {
         type: "object",
         properties: {
+          action: {
+            type: "string",
+            enum: ["search_nodes", "find_refs", "validate", "analyze", "list_scenes"],
+            description: "Operation to perform",
+          },
           project_path: { type: "string", description: "Path to Godot project root" },
-          include_scene_content: { type: "boolean", description: "Include full scene node tree (default: true)" },
-          include_script_summaries: { type: "boolean", description: "Include script function/signal overviews (default: true)" },
+          node_type: { type: "string", description: "Filter by node type (for search_nodes)" },
+          node_name: { type: "string", description: "Filter by node name (for search_nodes)" },
+          properties: { type: "string", description: "Property filter JSON (for search_nodes)" },
+          resource_path: { type: "string", description: "Resource path to find references for (for find_refs)" },
+          scene_path: { type: "string", description: "Specific scene to validate (for validate)" },
         },
-        required: ["project_path"],
+        required: ["action", "project_path"],
       },
     },
     {
-      name: "generate_component",
-      description: "Generate a complete, ready-to-use game component with scene file and GDScript. Supports: player, enemy, collectible, hud, health, projectile, spawner, level.",
+      name: "manage_assets",
+      description: "Import external resources, delete assets/files, or list project resources.",
       inputSchema: {
         type: "object",
         properties: {
+          action: { type: "string", enum: ["import", "delete_resource", "delete_file", "list"], description: "Operation to perform" },
           project_path: { type: "string", description: "Path to Godot project root" },
-          component: { type: "string", enum: ["player", "enemy", "collectible", "hud", "health", "projectile", "spawner", "level"], description: "Component type to generate" },
-          name: { type: "string", description: "Custom name for the component (defaults to type)" },
-          target_dir: { type: "string", description: "Target subdirectory (e.g. 'scenes/enemies')" },
+          source_path: { type: "string", description: "Source file path (for import)" },
+          dest_path: { type: "string", description: "Destination path in project (for import)" },
+          resource_path: { type: "string", description: "Resource path to delete (for delete_resource)" },
+          file_path: { type: "string", description: "File path to delete (for delete_file)" },
         },
-        required: ["project_path", "component"],
-      },
-    },
-    {
-      name: "generate_terrain",
-      description: "Generate a procedural terrain world — fixed 2D TileMap or infinite chunk-based (Minecraft-style). Supports caves, ores, liquids, foliage.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          name: { type: "string", description: "World name (default: World)" },
-          world_type: { type: "string", enum: ["2d", "flat3d"], description: "World type (default: 2d)" },
-          width: { type: "number", description: "Width in tiles (default: 64)" },
-          height: { type: "number", description: "Height in tiles (default: 64)" },
-          seed: { type: "number", description: "Random seed (default: random)" },
-          caves: { type: "boolean", description: "Include caves (default: true)" },
-          ores: { type: "boolean", description: "Include ores (default: true)" },
-          liquids: { type: "boolean", description: "Include water/lava (default: true)" },
-          foliage: { type: "boolean", description: "Include foliage (default: true)" },
-          infinite: { type: "boolean", description: "Enable infinite chunk-based world (default: false)" },
-          chunk_size: { type: "number", description: "Chunk size for infinite worlds (default: 32)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "generate_behavior_tree",
-      description: "Generate a complete behavior tree AI system for NPCs — Sims-style needs, traits, daily schedule, and utility-based action selection.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          name: { type: "string", description: "NPC type name (default: NPC)" },
-          needs_count: { type: "number", description: "Number of needs to track 1-5 (default: 3)" },
-          traits: { type: "boolean", description: "Include personality traits (default: true)" },
-          schedule: { type: "boolean", description: "Include daily schedule (default: true)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "generate_equipment_system",
-      description: "Generate a Terraria-style visual equipment system with inventory, equipment slots, and layered character rendering.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          slot_count: { type: "number", description: "Number of equipment slots 1-8 (default: 5)" },
-          inventory: { type: "boolean", description: "Include inventory system (default: true)" },
-          crafting: { type: "boolean", description: "Include crafting system (default: false)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "generate_scene_transition",
-      description: "Generate a Stardew Valley-style scene transition system with areas, doors, persistent state, and minimap.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          area_count: { type: "number", description: "Number of areas (default: 4)" },
-          area_style: { type: "string", enum: ["fields", "dungeon", "mixed"], description: "Area style (default: mixed)" },
-          minimap: { type: "boolean", description: "Include minimap (default: true)" },
-          persistence: { type: "boolean", description: "Include persistent state (default: true)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "generate_slg_map",
-      description: "Generate a strategy/simulation game map system with hex/grid tiles, fog of war, A* pathfinding, and turn system.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          name: { type: "string", description: "Map name (default: StrategyMap)" },
-          grid_type: { type: "string", enum: ["hex", "square"], description: "Grid type (default: hex)" },
-          width: { type: "number", description: "Map width in tiles (default: 20)" },
-          height: { type: "number", description: "Map height in tiles (default: 20)" },
-          fog_of_war: { type: "boolean", description: "Include fog of war (default: true)" },
-          turn_system: { type: "boolean", description: "Include turn system (default: true)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "generate_example_project",
-      description: "Generate a complete, ready-to-run example Godot project. Templates: platformer2d, rpg_dialogue, topdown_shooter, minimal_fps.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          output_path: { type: "string", description: "Path where the project should be created" },
-          template: { type: "string", enum: ["platformer2d", "rpg_dialogue", "topdown_shooter", "minimal_fps"], description: "Example project template" },
-          project_name: { type: "string", description: "Optional project name" },
-        },
-        required: ["output_path", "template"],
-      },
-    },
-    {
-      name: "generate_minecraft_demo",
-      description: "One-command: generates a complete 2D Minecraft-like demo with procedurally generated terrain (300 blocks wide), block breaking/placing, hotbar, physics, and player controls. Output is a fully runnable Godot project.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root (created if missing)" },
-        },
-        required: ["project_path"],
+        required: ["action", "project_path"],
       },
     },
     {
       name: "translate_project",
-      description: "Translate a Godot 3.x project to 4.x format. Converts scene node types (KinematicBody2D → CharacterBody2D), GDScript 1.0→2.0 syntax, and updates project.godot config.",
+      description: "Translate a Godot 3.x project to 4.x format. Converts scene node types and GDScript syntax.",
       inputSchema: {
         type: "object",
         properties: {
-          project_path: { type: "string", description: "Path to Godot 3.x project root" },
-          target: { type: "string", enum: ["all", "scenes", "scripts"], description: "What to translate (default: all)" },
-          create_backup: { type: "boolean", description: "Create .v3bak backups (default: true)" },
+          project_path: { type: "string", description: "Path to the Godot 3.x project to convert" },
+          backup: { type: "boolean", description: "Create backup before translating (default: true)" },
         },
         required: ["project_path"],
       },
     },
     {
-      name: "generate_sprite",
-      description: "Generate a character portrait/illustration using AI. BEST FOR: RPG dialogue portraits, character select screens, cutscene art. NOT for animated game sprites — ImageGen produces static illustrations, not multi-frame sprite sheets. For animated character demo, use demo_character tool instead (it creates a geometric placeholder that moves).",
+      name: "ping",
+      description: "Health check. Returns pong if the server is running.",
       inputSchema: {
         type: "object",
-        properties: {
-          output_path: { type: "string", description: "Output directory" },
-          name: { type: "string", description: "Character name (filename)" },
-          description: { type: "string", description: "Describe the character you want, e.g. 'a gothic girl with white hair and red eyes, dark dress, holding a staff'" },
-          style: { type: "string", enum: ["portrait", "pixel-art", "concept-art"], description: "Art style (default: portrait — best for dialogue UI). pixel-art is still a static sprite, not animated frames." },
-          width: { type: "number", description: "Image width (default: 1024)" },
-          height: { type: "number", description: "Image height (default: 1024)" },
-          transparent: { type: "boolean", description: "Transparent background (default: true)" },
-        },
-        required: ["output_path"],
-      },
-    },
-    {
-      name: "generate_animation",
-      description: "Generate a complete character animation system: scene + Sprite2D (with optional region crop) + CollisionShape2D + Camera2D + GDScript controller. Creates a fully runnable .tscn file.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project root" },
-          name: { type: "string", description: "Character name" },
-          sprite_path: { type: "string", description: "Path to sprite PNG relative to project root (e.g. assets/sprites/char.png)" },
-          region: { type: "string", description: 'Region rect to crop one frame from sprite sheet: "x,y,w,h"' },
-          scale: { type: "number", description: "Sprite display scale (default: auto-calculated)" },
-          idle: { type: "boolean", description: "Include idle animation (default: true)" },
-          walk: { type: "boolean", description: "Include walk animation (default: true)" },
-          run: { type: "boolean", description: "Include run animation (default: false)" },
-          crouch: { type: "boolean", description: "Include crouch animation (default: false)" },
-          turn: { type: "boolean", description: "Include turn animation (default: false)" },
-          jump: { type: "boolean", description: "Include jump animation (default: false)" },
-        },
-        required: ["project_path"],
-      },
-    },
-    {
-      name: "demo_character",
-      description: "One-command demo: generate a complete playable scene with character, AI behavior, ground, background. The character moves autonomously. WHEN NO SPRITE_PATH IS PROVIDED: creates a visible geometric placeholder (colored rectangle body + head) so you can ALWAYS see it moving. Best for testing AI behavior or when you don't have game sprites. Pass sprite_path and region for custom portrait display.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          project_path: { type: "string", description: "Path to Godot project (created if missing)" },
-          name: { type: "string", description: "Character name (default: demo_char)" },
-          sprite_path: { type: "string", description: "Path to sprite PNG relative to project root" },
-          region: { type: "string", description: 'Region rect "x,y,w,h" to crop one frame from sheet' },
-          behavior: { type: "string", enum: ["wander", "patrol", "idle"], description: "AI behavior (default: wander)" },
-        },
-        required: ["project_path"],
+        properties: {},
       },
     },
   ];
@@ -588,382 +233,86 @@ export function getToolDefinitions(): ToolDefinition[] {
 
 /**
  * Execute a tool by name with given arguments.
- * This is the core dispatch logic, extracted for testability.
  */
-export function executeTool(name: string, args: Record<string, unknown> | undefined): ToolResponse {
-  // --- ping ---
-  if (name === "ping") {
-    return { content: [{ type: "text", text: "pong" }] };
-  }
+export function executeTool(name: string, args: unknown): ToolResponse {
+  // Parse args from MCP JSON input
+  const parsedArgs = parseArgs(args);
+  const projectPath = parsedArgs.project_path as string | undefined;
 
-  // --- list_scenes ---
-  if (name === "list_scenes") {
-    const projectPath = (args?.project_path as string) || process.cwd();
-    const scenes = listScenes(projectPath);
-    const text = `Found ${scenes.length} scene(s) in project:\n\n` +
-      scenes.map((s: SceneInfo, i: number) => `${i + 1}. ${s.path}\n   Size: ${s.size} bytes\n   Modified: ${s.modified}\n`).join("\n");
-    return { content: [{ type: "text", text }] };
-  }
-
-  // --- read_scene ---
-  if (name === "read_scene") {
-    const scenePath = args?.scene_path as string;
-    if (!scenePath) throw new Error("Missing required parameter: scene_path");
-    const result = readScene(scenePath);
-    if (!result.success) throw new Error(result.error || "Failed to read scene");
-    const s = result.scene!;
-    const text = `Scene: ${scenePath}\n\nVersion: ${s.version}\nFormat: ${s.header.format}\nLoad Steps: ${s.header.loadSteps}\n` +
-      `Node Count: ${s.nodeCount}\nRoot Node: ${s.rootNode || "(none)"}\n\nNodes:\n` +
-      s.nodes.map((n: { name: string; type: string; parent: string | null }, i: number) => `${i + 1}. ${n.name} (${n.type})${n.parent ? ` - parent: ${n.parent}` : ""}`).join("\n");
-    return { content: [{ type: "text", text }] };
-  }
-
-  // --- create_scene ---
-  if (name === "create_scene") {
-    const scenePath = args?.scene_path as string;
-    const rootNodeName = args?.root_node_name as string;
-    const rootNodeType = args?.root_node_type as string;
-    const projectPath = args?.project_path as string | undefined;
-    if (!scenePath || !rootNodeName || !rootNodeType) {
-      throw new Error("Missing required parameters: scene_path, root_node_name, root_node_type");
+  try {
+    // --- init_project ---
+    if (name === "init_project") {
+      if (!projectPath) throw new Error("Missing required parameter: project_path");
+      initProject({
+        project_path: projectPath,
+        project_name: (parsedArgs.project_name as string) || "MyGame",
+      });
+      return { content: [{ type: "text", text: `Project created at ${projectPath}` }] };
     }
-    const text = createScene({ scene_path: scenePath, root_node_name: rootNodeName, root_node_type: rootNodeType, project_path: projectPath });
-    return { content: [{ type: "text", text }] };
-  }
 
-  // --- read_script ---
-  if (name === "read_script") {
-    const scriptPath = args?.script_path as string;
-    if (!scriptPath) throw new Error("Missing required parameter: script_path");
-    return { content: [{ type: "text", text: readScript({ script_path: scriptPath }) }] };
-  }
-
-  // --- add_node ---
-  if (name === "add_node") {
-    const scenePath = args?.scene_path as string;
-    const parentName = args?.parent_node_name as string;
-    const nodeType = args?.node_type as string;
-    const nodeName = args?.node_name as string;
-    const properties = args?.properties as Record<string, unknown> | undefined;
-    if (!scenePath || !parentName || !nodeType || !nodeName) {
-      throw new Error("Missing required params: scene_path, parent_node_name, node_type, node_name");
+    // --- edit_scene ---
+    if (name === "edit_scene") {
+      return { content: [{ type: "text", text: editScene(parsedArgs as unknown as EditSceneArgs) }] };
     }
-    return { content: [{ type: "text", text: addNode({ scene_path: scenePath, parent_node_name: parentName, node_type: nodeType, node_name: nodeName, properties }) }] };
-  }
 
-  // --- edit_node ---
-  if (name === "edit_node") {
-    const scenePath = args?.scene_path as string;
-    const nodeName = args?.node_name as string;
-    const properties = args?.properties as Record<string, unknown>;
-    if (!scenePath || !nodeName || !properties) {
-      throw new Error("Missing required params: scene_path, node_name, properties");
+    // --- edit_script ---
+    if (name === "edit_script") {
+      return { content: [{ type: "text", text: editScriptFn(parsedArgs as unknown as EditScriptArgs) }] };
     }
-    return { content: [{ type: "text", text: editNode({ scene_path: scenePath, node_name: nodeName, properties }) }] };
-  }
 
-  // --- create_script ---
-  if (name === "create_script") {
-    const scriptPath = args?.script_path as string;
-    const content = args?.content as string;
-    if (!scriptPath || !content) throw new Error("Missing required params: script_path, content");
-    return { content: [{ type: "text", text: createScript({ script_path: scriptPath, content, scene_path: args?.scene_path as string, node_name: args?.node_name as string }) }] };
-  }
-
-  // --- edit_script ---
-  if (name === "edit_script") {
-    const scriptPath = args?.script_path as string;
-    const replacements = args?.replacements as Array<{ search: string; replace: string; }>;
-    const createBackup = args?.create_backup as boolean | undefined;
-    if (!scriptPath || !replacements) throw new Error("Missing required params: script_path, replacements");
-    return { content: [{ type: "text", text: editScript({ script_path: scriptPath, replacements, create_backup: createBackup }) }] };
-  }
-
-  // --- delete_node ---
-  if (name === "delete_node") {
-    const scenePath = args?.scene_path as string;
-    const nodeName = args?.node_name as string;
-    const recursive = args?.recursive as boolean | undefined;
-    if (!scenePath || !nodeName) throw new Error("Missing required params: scene_path, node_name");
-    return { content: [{ type: "text", text: deleteNode({ scene_path: scenePath, node_name: nodeName, recursive }) }] };
-  }
-
-  // --- delete_file ---
-  if (name === "delete_file") {
-    const filePath = args?.file_path as string;
-    const useTrash = args?.use_trash as boolean | undefined;
-    if (!filePath) throw new Error("Missing required parameter: file_path");
-    return { content: [{ type: "text", text: deleteFile({ file_path: filePath, use_trash: useTrash }) }] };
-  }
-
-  // --- validate_scene ---
-  if (name === "validate_scene") {
-    const scenePath = args?.scene_path as string;
-    const projectPath = args?.project_path as string | undefined;
-    if (!scenePath) throw new Error("Missing required parameter: scene_path");
-    return { content: [{ type: "text", text: validateScene({ scene_path: scenePath, project_path: projectPath }) }] };
-  }
-
-  // --- validate_project ---
-  if (name === "validate_project") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: validateProject({ project_path: projectPath }) }] };
-  }
-
-  // --- execute_gdscript ---
-  if (name === "execute_gdscript") {
-    const code = args?.code as string;
-    const projectPath = args?.project_path as string;
-    const timeout = args?.timeout as number | undefined;
-    if (!code || !projectPath) throw new Error("Missing required params: code, project_path");
-    return { content: [{ type: "text", text: executeGDScript({ code, project_path: projectPath, timeout }) }] };
-  }
-
-  // --- list_resources ---
-  if (name === "list_resources") {
-    const projectPath = args?.project_path as string;
-    const type = args?.type as string | undefined;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: listResources({ project_path: projectPath, type: type as "all" | "image" | "audio" | "font" | "scene" | "script" | undefined }) }] };
-  }
-
-  // --- read_project_settings ---
-  if (name === "read_project_settings") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: readProjectSettings({ project_path: projectPath }) }] };
-  }
-
-  // --- edit_project_settings ---
-  if (name === "edit_project_settings") {
-    const projectPath = args?.project_path as string;
-    const section = args?.section as string;
-    const key = args?.key as string;
-    const value = args?.value as string;
-    const type = args?.type as "string" | "int" | "float" | "bool" | undefined;
-    if (!projectPath || !section || !key || value === undefined) {
-      throw new Error("Missing required params: project_path, section, key, value");
+    // --- edit_settings ---
+    if (name === "edit_settings") {
+      return { content: [{ type: "text", text: editSettings(parsedArgs as unknown as EditSettingsArgs) }] };
     }
-    return { content: [{ type: "text", text: editProjectSettings({ project_path: projectPath, section, key, value, type }) }] };
-  }
 
-  // --- search_nodes ---
-  if (name === "search_nodes") {
-    const projectPath = args?.project_path as string;
-    const nodeType = args?.node_type as string | undefined;
-    const nameContains = args?.name_contains as string | undefined;
-    const hasProperty = args?.has_property as string | undefined;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: searchNodes({ project_path: projectPath, node_type: nodeType, name_contains: nameContains, has_property: hasProperty }) }] };
-  }
-
-  // --- find_references ---
-  if (name === "find_references") {
-    const projectPath = args?.project_path as string;
-    const resourcePath = args?.resource_path as string;
-    if (!projectPath || !resourcePath) throw new Error("Missing required params: project_path, resource_path");
-    return { content: [{ type: "text", text: findReferences({ project_path: projectPath, resource_path: resourcePath }) }] };
-  }
-
-  // --- import_resource ---
-  if (name === "import_resource") {
-    const sourcePath = args?.source_path as string;
-    const destPath = args?.dest_path as string;
-    const mkdir = args?.mkdir as boolean | undefined;
-    if (!sourcePath || !destPath) throw new Error("Missing required params: source_path, dest_path");
-    return { content: [{ type: "text", text: importResource({ source_path: sourcePath, dest_path: destPath, mkdir }) }] };
-  }
-
-  // --- delete_resource ---
-  if (name === "delete_resource") {
-    const resourcePath = args?.resource_path as string;
-    const projectPath = args?.project_path as string;
-    const force = args?.force as boolean | undefined;
-    const useTrash = args?.use_trash as boolean | undefined;
-    if (!resourcePath || !projectPath) throw new Error("Missing required params: resource_path, project_path");
-    return { content: [{ type: "text", text: deleteResource({ resource_path: resourcePath, project_path: projectPath, force, use_trash: useTrash }) }] };
-  }
-
-  // --- rename_node ---
-  if (name === "rename_node") {
-    const scenePath = args?.scene_path as string;
-    const oldName = args?.old_name as string;
-    const newName = args?.new_name as string;
-    const updateParentRefs = args?.update_parent_refs as boolean | undefined;
-    const updateConnections = args?.update_connections as boolean | undefined;
-    if (!scenePath || !oldName || !newName) throw new Error("Missing required params: scene_path, old_name, new_name");
-    return { content: [{ type: "text", text: renameNode({ scene_path: scenePath, old_name: oldName, new_name: newName, update_parent_refs: updateParentRefs, update_connections: updateConnections }) }] };
-  }
-
-  // --- batch_edit_script ---
-  if (name === "batch_edit_script") {
-    const projectPath = args?.project_path as string;
-    const search = args?.search as string;
-    const replace = args?.replace as string;
-    const fileType = args?.file_type as "gd" | "tscn" | "all" | undefined;
-    const createBackup = args?.create_backup as boolean | undefined;
-    if (!projectPath || search === undefined || replace === undefined) {
-      throw new Error("Missing required params: project_path, search, replace");
+    // --- generate_game ---
+    if (name === "generate_game") {
+      return { content: [{ type: "text", text: generateGame(parsedArgs as unknown as GenerateGameArgs) }] };
     }
-    return { content: [{ type: "text", text: batchEditScript({ project_path: projectPath, search, replace, file_type: fileType, create_backup: createBackup }) }] };
-  }
 
-  // --- init_project ---
-  if (name === "init_project") {
-    const projectPath = args?.project_path as string;
-    const projectName = args?.project_name as string | undefined;
-    const width = args?.width as number | undefined;
-    const height = args?.height as number | undefined;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: initProject({ project_path: projectPath, project_name: projectName, width, height }) }] };
-  }
+    // --- run_project ---
+    if (name === "run_project") {
+      if (!projectPath) throw new Error("Missing required parameter: project_path");
+      const mode = (parsedArgs.mode as string) || "headless";
+      if (mode === "script") {
+        const script = parsedArgs.script as string;
+        if (!script) throw new Error("script parameter required for script mode");
+        return { content: [{ type: "text", text: executeGDScript({ project_path: projectPath, script_src: script } as any) }] };
+      }
+      return { content: [{ type: "text", text: runGodotProject({
+        project_path: projectPath,
+        mode: "headless",
+        timeout: (parsedArgs.timeout as number) || 10000,
+      }) }] };
+    }
 
-  // --- analyze_project ---
-  if (name === "analyze_project") {
-    const projectPath = args?.project_path as string;
-    const includeSceneContent = args?.include_scene_content as boolean | undefined;
-    const includeScriptSummaries = args?.include_script_summaries as boolean | undefined;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: analyzeProject({ project_path: projectPath, include_scene_content: includeSceneContent, include_script_summaries: includeScriptSummaries }) }] };
-  }
+    // --- analyze_project ---
+    if (name === "analyze_project") {
+      return { content: [{ type: "text", text: analyzeProjectFn(parsedArgs as unknown as AnalyzeArgs) }] };
+    }
 
-  // --- generate_component ---
-  if (name === "generate_component") {
-    const projectPath = args?.project_path as string;
-    const component = args?.component as string;
-    const name = args?.name as string | undefined;
-    const targetDir = args?.target_dir as string | undefined;
-    if (!projectPath || !component) throw new Error("Missing required params: project_path, component");
-    return { content: [{ type: "text", text: generateComponent({ project_path: projectPath, component, name, target_dir: targetDir }) }] };
-  }
+    // --- manage_assets ---
+    if (name === "manage_assets") {
+      return { content: [{ type: "text", text: manageAssets(parsedArgs as unknown as ManageAssetsArgs) }] };
+    }
 
-  // --- generate_terrain ---
-  if (name === "generate_terrain") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    const opts: GenerateTerrainArgs = {
-      project_path: projectPath,
-      name: args?.name as string | undefined,
-      world_type: args?.world_type as "2d" | "flat3d" | undefined,
-      width: args?.width as number | undefined,
-      height: args?.height as number | undefined,
-      seed: args?.seed as number | undefined,
-      caves: args?.caves as boolean | undefined,
-      ores: args?.ores as boolean | undefined,
-      liquids: args?.liquids as boolean | undefined,
-      foliage: args?.foliage as boolean | undefined,
-      infinite: args?.infinite as boolean | undefined,
-      chunk_size: args?.chunk_size as number | undefined,
-    };
-    return { content: [{ type: "text", text: generateTerrain(opts) }] };
-  }
+    // --- translate_project ---
+    if (name === "translate_project") {
+      if (!projectPath) throw new Error("Missing required parameter: project_path");
+      return { content: [{ type: "text", text: translateProject({
+        project_path: projectPath,
+        backup: parsedArgs.backup !== false,
+      } as any) }] };
+    }
 
-  // --- generate_behavior_tree ---
-  if (name === "generate_behavior_tree") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateBehaviorTree({ project_path: projectPath, name: args?.name as string | undefined, needs_count: args?.needs_count as number | undefined, traits: args?.traits as boolean | undefined, schedule: args?.schedule as boolean | undefined }) }] };
-  }
+    // --- ping ---
+    if (name === "ping") {
+      return { content: [{ type: "text", text: "pong" }] };
+    }
 
-  // --- generate_equipment_system ---
-  if (name === "generate_equipment_system") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateEquipmentSystem({ project_path: projectPath, slot_count: args?.slot_count as number | undefined, inventory: args?.inventory as boolean | undefined, crafting: args?.crafting as boolean | undefined }) }] };
+    return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { content: [{ type: "text", text: `Error: ${msg}` }], isError: true };
   }
-
-  // --- generate_scene_transition ---
-  if (name === "generate_scene_transition") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateSceneTransition({ project_path: projectPath, area_count: args?.area_count as number | undefined, area_style: args?.area_style as "fields" | "dungeon" | "mixed" | undefined, minimap: args?.minimap as boolean | undefined, persistence: args?.persistence as boolean | undefined }) }] };
-  }
-
-  // --- generate_slg_map ---
-  if (name === "generate_slg_map") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateSlgMap({ project_path: projectPath, name: args?.name as string | undefined, grid_type: args?.grid_type as "hex" | "square" | undefined, width: args?.width as number | undefined, height: args?.height as number | undefined, fog_of_war: args?.fog_of_war as boolean | undefined, turn_system: args?.turn_system as boolean | undefined }) }] };
-  }
-
-  // --- generate_example_project ---
-  if (name === "generate_example_project") {
-    const outputPath = args?.output_path as string;
-    const template = args?.template as string;
-    const projectName = args?.project_name as string | undefined;
-    if (!outputPath || !template) throw new Error("Missing required params: output_path, template");
-    return { content: [{ type: "text", text: generateExampleProject({ output_path: outputPath, template: template as "platformer2d" | "rpg_dialogue" | "topdown_shooter" | "minimal_fps", project_name: projectName }) }] };
-  }
-
-  // --- translate_project ---
-  if (name === "translate_project") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: translateProject({ project_path: projectPath, target: args?.target as "all" | "scenes" | "scripts" | undefined, create_backup: args?.create_backup as boolean | undefined }) }] };
-  }
-
-  // --- generate_sprite ---
-  if (name === "generate_sprite") {
-    const outputPath = args?.output_path as string;
-    if (!outputPath) throw new Error("Missing required parameter: output_path");
-    const opts: GenerateSpriteArgs = {
-      output_path: outputPath,
-      name: args?.name as string | undefined,
-      description: args?.description as string | undefined,
-      style: args?.style as string | undefined,
-      width: args?.width as number | undefined,
-      height: args?.height as number | undefined,
-      transparent: args?.transparent as boolean | undefined,
-    };
-    return { content: [{ type: "text", text: generateSprite(opts) }] };
-  }
-
-  // --- generate_animation ---
-  if (name === "generate_animation") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateAnimation({
-      project_path: projectPath,
-      name: args?.name as string | undefined,
-      sprite_path: args?.sprite_path as string | undefined,
-      region: args?.region as string | undefined,
-      scale: args?.scale as number | undefined,
-      idle: args?.idle as boolean | undefined,
-      walk: args?.walk as boolean | undefined,
-      run: args?.run as boolean | undefined,
-      crouch: args?.crouch as boolean | undefined,
-      turn: args?.turn as boolean | undefined,
-      jump: args?.jump as boolean | undefined,
-    }) }] };
-  }
-
-  // --- demo_character ---
-  if (name === "demo_character") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: demoCharacter({
-      project_path: projectPath,
-      name: args?.name as string | undefined,
-      sprite_path: args?.sprite_path as string | undefined,
-      region: args?.region as string | undefined,
-      behavior: args?.behavior as "wander" | "patrol" | "idle" | undefined,
-    }) }] };
-  }
-
-  // --- generate_minecraft_demo ---
-  if (name === "generate_minecraft_demo") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: generateMinecraftDemo({ project_path: projectPath }) }] };
-  }
-
-  // --- run_project ---
-  if (name === "run_project") {
-    const projectPath = args?.project_path as string;
-    if (!projectPath) throw new Error("Missing required parameter: project_path");
-    return { content: [{ type: "text", text: runGodotProject({ project_path: projectPath, mode: (args?.mode as "normal" | "headless" | "debug") || "normal", extra_args: args?.extra_args as string[] | undefined }) }] };
-  }
-
-  throw new Error(`Unknown tool: ${name}`);
 }

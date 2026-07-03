@@ -94,32 +94,30 @@ describe("dispatch.ts — remaining handler paths", () => {
     });
   });
 
-  it("list_scenes dispatch returns formatted output (lines 151-155)", () => {
-    const result = executeTool("list_scenes", { project_path: scenesDir });
-    expect(result.content[0].text).toContain("scene(s)");
-    expect(result.content[0].text).toContain("Size:");
-    expect(result.content[0].text).toContain("Modified:");
+  it("list_scenes via analyze_project (lines 151-155)", () => {
+    const result = executeTool("analyze_project", { action: "list_scenes", project_path: scenesDir });
+    expect(result.content[0].text).toContain(".tscn");
+    expect(result.content[0].text).toContain("World");
   });
 
-  it("read_script dispatch returns script content (line 188)", () => {
+  it("read_script via edit_script (line 188)", () => {
     fs.writeFileSync(tmpScript, "extends Node2D\n\nfunc _ready():\n\tpass\n", "utf-8");
-    const result = executeTool("read_script", { script_path: tmpScript });
-    expect(result.content[0].text).toContain("Lines: 5");
+    const result = executeTool("edit_script", { action: "read", script_path: tmpScript });
     expect(result.content[0].text).toContain("extends Node2D");
   });
 
-  it("create_script dispatch returns result (line 220)", () => {
-    // First create a scene to attach script to
-    const result = executeTool("create_script", {
+  it("create_script via edit_script (line 220)", () => {
+    const result = executeTool("edit_script", {
+      action: "create",
       script_path: tmpScript,
       content: "extends Node2D\nfunc _ready():\n\tpass\n",
     });
-    expect(result.content[0].text).toContain("Created script");
+    expect(result.content[0].text).toContain("Script created");
   });
 
-  it("list_scenes dispatch with no args uses cwd", () => {
-    const result = executeTool("list_scenes", {});
-    expect(result.content[0].text).toBeDefined();
+  it("list_scenes via analyze_project with no args fails gracefully", () => {
+    const result = executeTool("analyze_project", { action: "list_scenes" });
+    expect(result.isError).toBe(true);
   });
 });
 

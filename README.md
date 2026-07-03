@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。37 个工具，316 个测试。
+让 AI 直接读写 Godot 项目文件。10 个工具，285 个测试。
 
 ---
 
@@ -33,71 +33,20 @@
 
 ---
 
-## 37 个工具列表
+## 10 个工具列表
 
-### 场景编辑
-| 工具 | 作用 |
-|------|------|
-| `create_scene` | 创建场景 |
-| `read_scene` | 读场景（支持版本自动检测） |
-| `list_scenes` | 列出所有场景 |
-| `add_node` | 加节点 |
-| `edit_node` | 改节点属性 |
-| `delete_node` | 删节点 |
-| `rename_node` | 重命名节点，自动更新子节点和连接引用 |
-| `validate_scene` | 校验场景完整性 |
-
-### 脚本管理
-| 工具 | 作用 |
-|------|------|
-| `create_script` | 创建脚本，可选绑定到场景节点 |
-| `read_script` | 读脚本 |
-| `edit_script` | 搜索替换修改，自动备份 |
-| `batch_edit_script` | 跨文件批量搜索替换 |
-| `execute_gdscript` | 用 Godot CLI 执行 GDScript |
-
-### 项目操作
-| 工具 | 作用 |
-|------|------|
-| `run_project` | 用 Godot CLI 运行项目 |
-| `init_project` | 创建标准项目骨架 |
-| `read_project_settings` | 读 project.godot |
-| `edit_project_settings` | 改 project.godot，自动备份 |
-| `import_resource` | 导入外部资源 |
-| `delete_resource` | 删资源，删除前检查引用 |
-| `delete_file` | 删文件，默认移到回收站 |
-
-### 搜索校验
-| 工具 | 作用 |
-|------|------|
-| `search_nodes` | 按类型/名称/属性搜节点 |
-| `find_references` | 查资源/脚本被哪些场景引用 |
-| `validate_project` | 校验整个项目 |
-| `analyze_project` | 分析项目结构、脚本、资源依赖 |
-
-### 图形与动画
-| 工具 | 作用 |
-|------|------|
-| `generate_sprite` | AI 生成角色立绘（对话展示用途） |
-| `generate_animation` | 生成角色场景骨架（CharacterBody2D + 碰撞体 + 摄像机） |
-| `demo_character` | **一键演示**：创建带 AI 行为 + 程序化动画的完整可运行场景 |
-
-### 一键生成
-| 工具 | 生成什么 |
-|------|---------|
-| `generate_component` | 8 种游戏组件 |
-| `generate_terrain` | 程序化地形（固定地图或无限区块） |
-| `generate_behavior_tree` | NPC 行为树 AI |
-| `generate_equipment_system` | 装备系统 |
-| `generate_scene_transition` | 场景切换系统 |
-| `generate_slg_map` | SLG 策略地图 |
-| `generate_example_project` | 完整示例项目（4 种） |
-| `translate_project` | Godot 3.x 项目转 4.x |
-
-### 通用
-| 工具 | 作用 |
-|------|------|
-| `ping` | 测连通性 |
+| 工具 | 作用 | 合并了哪些旧工具 |
+|------|------|-----------------|
+| `init_project` | 创建标准项目骨架 | |
+| `edit_scene` | 场景/节点的 CRUD 操作 | 8 个旧工具：create/read/list_scenes, add/edit/delete/rename/validate |
+| `edit_script` | 脚本的增删改查 + 批量替换 | 4 个旧工具：create/read/edit/batch_edit |
+| `edit_settings` | 读写 project.godot 配置 | 2 个旧工具：read/write settings |
+| `generate_game` | **生成各种游戏系统** | 10 个旧工具：component/terrain/behavior_tree/equipment/scene_transition/slg_map/example/sprite/animation/demo |
+| `run_project` | 运行项目或执行 GDScript | 2 个旧工具：run_project + execute_gdscript |
+| `analyze_project` | 搜索/引用/校验/分析 | 4 个旧工具：search/find_refs/validate/analyze |
+| `manage_assets` | 资源导入/删除/列出 | 3 个旧工具：import/delete/list resources |
+| `translate_project` | Godot 3.x 转 4.x | |
+| `ping` | 连通性检查 | |
 
 ---
 
@@ -105,8 +54,8 @@
 
 | 指标 | 数值 |
 |------|------|
-| 工具数 | 37 |
-| 测试数 | 316（27 个文件） |
+| 工具数 | 10（合并自 37 个旧工具） |
+| 测试数 | 285（27 个文件） |
 | 行覆盖率 | 95% |
 | CI | GitHub Actions（Node 20/22，Ubuntu 24.04） |
 

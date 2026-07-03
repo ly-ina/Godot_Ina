@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
-import { editScript } from "../src/tools/edit_script.js";
+import { editScript } from "../src/tools/edit_script_orig.js";
 
 const TMP_SCRIPT = path.resolve("test-fixtures/scripts/__edit_test.gd");
 const TMP_BAK = TMP_SCRIPT + ".bak";

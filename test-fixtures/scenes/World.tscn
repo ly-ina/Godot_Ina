@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://main.gd" id="1"]
 
 [node name="World" type="Node2D"]
+__test_prop = true
 [node name="Player" type="CharacterBody2D" parent="."]
 position = "Vector2(100, 100)"
 script = ExtResource("1")
