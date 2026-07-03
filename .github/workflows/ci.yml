@@ -68,7 +68,4 @@ jobs:
       - run: npm install
       - run: npm run build
       - name: Validate test fixtures
-        run: node -e "
-          const { validateProject } = require('./dist/tools/validate_project.js');
-          console.log(validateProject({ project_path: 'test-fixtures' }));
-        "
+        run: node -e "var v=require('./dist/tools/validate_project.js'); console.log(v.validateProject({project_path: 'test-fixtures'}));"
