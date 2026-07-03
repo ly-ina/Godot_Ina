@@ -49,14 +49,14 @@ describe("MCP Server — real process integration", () => {
     if (!fs.existsSync(godotFile)) fs.writeFileSync(godotFile, "; Test\nconfig_version=5\n", "utf-8");
   });
 
-  it("responds to tools/list (10 consolidated tools)", async () => {
+  it("responds to tools/list (13 tools)", async () => {
     const proc = startServer();
     const response = await sendRequest("tools/list");
     proc.kill();
     expect(response.jsonrpc).toBe("2.0");
     const result = response.result as Record<string, unknown>;
     expect(Array.isArray(result.tools)).toBe(true);
-    expect((result.tools as unknown[]).length).toBe(10);
+    expect((result.tools as unknown[]).length).toBe(13);
   });
 
   it("ping returns pong", async () => {

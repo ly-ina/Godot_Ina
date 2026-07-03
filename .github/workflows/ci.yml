@@ -17,13 +17,16 @@ on:
       - "LICENSE"
 
 jobs:
+  # ── Multi-platform test matrix ──
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [20, 22]
         include:
+          # Also test on latest Ubuntu with latest Node
           - os: ubuntu-24.04
             node-version: 22
 
@@ -39,6 +42,7 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  # ── TypeScript lint (no emit) ──
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -50,3 +54,21 @@ jobs:
 
       - run: npm install
       - run: npx tsc --noEmit
+
+  # ── Validate test fixtures have no broken references ──
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - run: npm install
+      - run: npm run build
+      - name: Validate test fixtures
+        run: node -e "
+          const { validateProject } = require('./dist/tools/validate_project.js');
+          console.log(validateProject({ project_path: 'test-fixtures' }));
+        "

@@ -135,17 +135,16 @@ src/
 - **阶段 C — 制作** ✅ 2D 模板库 `generate_template`、3D 场景 `generate_scene_3d`、资产库 `fetch_asset`
 - **阶段 D — 生态** ✅ Godot 编辑器插件、外部生成器扩展、Web 场景预览
 
-### 下一阶段 — 质量（当前）
+### 下一阶段 — 质量（进行中）
 
-| 优先级 | 任务 | 说明 |
-|--------|------|------|
-| 🔴 P0 | npm 发布 | 发布到 npm，`npx godot-mcp-server` 直接使用 |
-| 🔴 P0 | 错误信息优化 | 所有工具的异常信息改为中文可读、带解决方案建议 |
-| 🟠 P1 | 场景校验强化 | `edit_scene validate` 检测节点引用断裂、资源依赖缺失 |
-| 🟠 P1 | 生成器输出验证 | 每次 `generate_game` 自动校验输出的 .tscn 格式合法性 |
-| 🟡 P2 | CI 多平台测试 | 在 GitHub Actions 中增加 Windows + macOS 运行矩阵 |
-| 🟡 P2 | 贡献者指南 | 完善 CONTRIBUTING.md，补充插件开发文档 |
-| 🔵 P3 | 性能基准 | 对大型项目（50+ 场景）做生成/解析性能测试 |
+| 优先级 | 任务 | 说明 | 状态 |
+|--------|------|------|------|
+| 🔴 P0 | npm 发布 | 发布到 npm，`npx godot-mcp-server` 直接使用 | ⏳ |
+| 🔴 P0 | 错误信息优化 | 所有工具的异常信息改为中文可读、带解决方案建议 | ✅ |
+| 🟠 P1 | 场景校验强化 | `edit_scene validate` 检测节点引用断裂、资源依赖缺失、SubResource 不存在 | ✅ |
+| 🟠 P1 | 生成器输出验证 | 每次 `generate_game` 自动校验输出的 .tscn 格式合法性 | ✅ |
+| 🟡 P2 | CI 多平台测试 | 在 GitHub Actions 中增加 Windows + macOS 运行矩阵 | ✅ |
+| 🟡 P2 | 贡献者指南 | 完善 PLUGIN_DEV.md，补充插件开发文档 | ✅ |
 
 ### 远期目标
 

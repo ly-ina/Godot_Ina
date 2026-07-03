@@ -24,6 +24,8 @@ import { generateTemplate, type GenerateTemplateArgs } from "./generate_template
 import { generateScene3D, type GenerateScene3DArgs } from "./generate_scene_3d.js";
 import { fetchAsset, type FetchAssetArgs } from "./fetch_asset.js";
 import { translateProject } from "./translate_project.js";
+import { validateScene } from "./validate_scene.js";
+import { cnError } from "./error-messages.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -370,7 +372,29 @@ export function executeTool(name: string, args: unknown): ToolResponse {
 
     return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { content: [{ type: "text", text: `Error: ${msg}` }], isError: true };
+    return { content: [{ type: "text", text: cnError(e) }], isError: true };
   }
+}
+
+/**
+ * Post-generation validation: check generated .tscn files for integrity.
+ * Called automatically after generate_* tools produce output.
+ */
+function validateGeneratedOutput(projectPath: string, generatedPaths: string[]): string {
+  if (!generatedPaths || generatedPaths.length === 0) return "";
+  const results: string[] = ["", "── 自动输出校验 ──"];
+  for (const p of generatedPaths) {
+    try {
+      const result = validateScene({ scene_path: p, project_path: projectPath });
+      const failed = result.includes("[ERROR]");
+      results.push(`  ${failed ? "❌" : "✅"} ${p.split("/").pop()}: ${failed ? "有错误" : "通过"}`);
+      if (failed) {
+        results.push(...result.split("\n").filter(l => l.startsWith("[")).map(l => `    ${l}`));
+      }
+    } catch {
+      results.push(`  ⚠️  ${p}: 无法校验`);
+    }
+  }
+  if (results.length === 2) return "";
+  return results.join("\n");
 }
