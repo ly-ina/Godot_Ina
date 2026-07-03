@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。10 个工具，285 个测试。
+让 AI 直接读写 Godot 项目文件。13 个核心工具，286 个测试。
 
 ---
 
@@ -57,10 +57,10 @@
 
 | 指标 | 数值 |
 |------|------|
-| 工具数 | 13（合并自 37 个旧工具 + 插件系统） |
-| 测试数 | 285（27 个文件） |
+| 核心工具 | 13（合并自 37 个旧工具） |
+| 测试数 | 286（27 个文件） |
 | 行覆盖率 | 95% |
-| CI | GitHub Actions（Node 20/22，Ubuntu 24.04） |
+| CI | GitHub Actions（Ubuntu / Windows / macOS，Node 20/22） |
 
 ---
 
@@ -108,14 +108,19 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ```
 src/
 ├── index.ts         入口
-├── tools/           37 个工具
-│   ├── dispatch.ts  分发
-│   └── *.ts         各工具
+├── tools/           核心工具（13 个暴露 + 辅助文件）
+│   ├── dispatch.ts  分发层
+│   ├── edit_scene.ts 等 13 个暴露工具
+│   └── impl/        32 个内部实现（非直接调用）
 ├── parsers/         .tscn 解析器（格式 3）
 ├── writers/         .tscn 生成器
 ├── godot/           Godot CLI 封装
 ├── adapters/        版本适配（v3/v4）
+├── config/          共享主题/配色配置
 └── utils/           工具函数
+├── plugins/         外部生成器插件（可选）
+├── addons/godot-mcp/  Godot 编辑器插件
+└── web/preview.html   场景可视化预览
 ```
 
 设计特点：
@@ -134,17 +139,19 @@ src/
 - **阶段 B — 系统化** ✅ 共享主题配置、插件注册系统、模板生成器
 - **阶段 C — 制作** ✅ 2D 模板库 `generate_template`、3D 场景 `generate_scene_3d`、资产库 `fetch_asset`
 - **阶段 D — 生态** ✅ Godot 编辑器插件、外部生成器扩展、Web 场景预览
+- **瘦身** ✅ 32 个内部文件移入 `impl/`、CI 三平台矩阵、中文错误信息
 
-### 下一阶段 — 质量（进行中）
+### 下一阶段 — 质量
 
 | 优先级 | 任务 | 说明 | 状态 |
 |--------|------|------|------|
-| 🔴 P0 | npm 发布 | 发布到 npm，`npx godot-mcp-server` 直接使用 | ⏳ |
+| 🔴 P0 | npm 发布 | 发布到 npm，`npx godot-mcp-server` 直接使用 | ⏳ 待开始 |
 | 🔴 P0 | 错误信息优化 | 所有工具的异常信息改为中文可读、带解决方案建议 | ✅ |
-| 🟠 P1 | 场景校验强化 | `edit_scene validate` 检测节点引用断裂、资源依赖缺失、SubResource 不存在 | ✅ |
+| 🟠 P1 | 场景校验强化 | 检测节点引用断裂、资源依赖缺失、SubResource 不存在 | ✅ |
 | 🟠 P1 | 生成器输出验证 | 每次 `generate_game` 自动校验输出的 .tscn 格式合法性 | ✅ |
-| 🟡 P2 | CI 多平台测试 | 在 GitHub Actions 中增加 Windows + macOS 运行矩阵 | ✅ |
-| 🟡 P2 | 贡献者指南 | 完善 PLUGIN_DEV.md，补充插件开发文档 | ✅ |
+| 🟠 P1 | 目录瘦身 | 32 个内部文件移入 `impl/`，tools/ 顶层仅保留 18 个核心文件 | ✅ |
+| 🟡 P2 | CI 多平台测试 | Ubuntu / Windows / macOS 三平台测试矩阵 | ✅ |
+| 🟡 P2 | 插件开发文档 | PLUGIN_DEV.md：完整插件 API + 示例 + 调试 | ✅ |
 
 ### 远期目标
 
