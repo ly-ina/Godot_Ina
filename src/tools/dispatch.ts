@@ -20,6 +20,9 @@ import { runGodotProject } from "./run_project.js";
 import { executeGDScript } from "./execute_gdscript.js";
 import { analyzeProjectFn, type AnalyzeArgs } from "./project_analysis.js";
 import { manageAssets, type ManageAssetsArgs } from "./manage_assets.js";
+import { generateTemplate, type GenerateTemplateArgs } from "./generate_template.js";
+import { generateScene3D, type GenerateScene3DArgs } from "./generate_scene_3d.js";
+import { fetchAsset, type FetchAssetArgs } from "./fetch_asset.js";
 import { translateProject } from "./translate_project.js";
 
 export interface ToolResponse {
@@ -221,6 +224,46 @@ export function getToolDefinitions(): ToolDefinition[] {
       },
     },
     {
+      name: "generate_template",
+      description: "Generate a complete single-scene game template: platformer2d, rpg_topdown, topdown_shooter, or strategy_slg. Drops a ready-to-run .tscn into your project.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          template: { type: "string", enum: ["platformer2d", "rpg_topdown", "topdown_shooter", "strategy_slg"], description: "Template type" },
+          name: { type: "string", description: "Output scene name (default: template name)" },
+        },
+        required: ["project_path", "template"],
+      },
+    },
+    {
+      name: "generate_scene_3d",
+      description: "Generate a basic 3D scene with ground, player controller (FPS or TPS), lighting, and collision. WASD move, Space jump, mouse look.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          name: { type: "string", description: "Scene name (default: Scene3D)" },
+          camera: { type: "string", enum: ["fps", "tps"], description: "Camera mode: fps (first person) or tps (third person, default)" },
+        },
+        required: ["project_path"],
+      },
+    },
+    {
+      name: "fetch_asset",
+      description: "Search and download assets from the Godot Asset Library or direct URLs. Supports sprites, audio, models, scripts, addons.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Path to Godot project root" },
+          query: { type: "string", description: "Search query or direct download URL" },
+          type: { type: "string", description: "Asset type hint: sprites, audio, models, scripts, templates, addons" },
+          limit: { type: "number", description: "Max search results (default: 5)" },
+        },
+        required: ["project_path", "query"],
+      },
+    },
+    {
       name: "ping",
       description: "Health check. Returns pong if the server is running.",
       inputSchema: {
@@ -303,6 +346,21 @@ export function executeTool(name: string, args: unknown): ToolResponse {
         project_path: projectPath,
         backup: parsedArgs.backup !== false,
       } as any) }] };
+    }
+
+    // --- generate_template ---
+    if (name === "generate_template") {
+      return { content: [{ type: "text", text: generateTemplate(parsedArgs as unknown as GenerateTemplateArgs) }] };
+    }
+
+    // --- generate_scene_3d ---
+    if (name === "generate_scene_3d") {
+      return { content: [{ type: "text", text: generateScene3D(parsedArgs as unknown as GenerateScene3DArgs) }] };
+    }
+
+    // --- fetch_asset ---
+    if (name === "fetch_asset") {
+      return { content: [{ type: "text", text: fetchAsset(parsedArgs as unknown as FetchAssetArgs) }] };
     }
 
     // --- ping ---

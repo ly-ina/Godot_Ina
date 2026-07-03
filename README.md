@@ -46,6 +46,9 @@
 | `analyze_project` | 搜索/引用/校验/分析 | 4 个旧工具：search/find_refs/validate/analyze |
 | `manage_assets` | 资源导入/删除/列出 | 3 个旧工具：import/delete/list resources |
 | `translate_project` | Godot 3.x 转 4.x | |
+| `generate_template` | **2D 游戏模板**（平台/RPG/射击/策略） | 新增 阶段C |
+| `generate_scene_3d` | **3D 场景基础**（FPS/TPS 控制器） | 新增 阶段C |
+| `fetch_asset` | **Asset Library 集成**（搜索/下载资源） | 新增 阶段C |
 | `ping` | 连通性检查 | |
 
 ---
@@ -54,7 +57,7 @@
 
 | 指标 | 数值 |
 |------|------|
-| 工具数 | 10（合并自 37 个旧工具） |
+| 工具数 | 13（合并自 37 个旧工具） |
 | 测试数 | 285（27 个文件） |
 | 行覆盖率 | 95% |
 | CI | GitHub Actions（Node 20/22，Ubuntu 24.04） |
@@ -141,10 +144,10 @@ src/
 - [ ] 首个多系统 demo：MC 世界 + 商人 NPC + 背包
 - [ ] 插件化：外部开发者可通过简单接口添加生成器
 
-#### 阶段 C — 制作
-- [ ] 2D 游戏模板库（RPG、平台跳跃、俯视角射击、策略）
-- [ ] 3D 场景基础支持（地形、碰撞、摄像机控制）
-- [ ] Godot Asset Library 集成（一键下载 CC0 资源）
+#### 阶段 C — 制作（已完成）
+- [x] 2D 游戏模板库（RPG、平台跳跃、俯视角射击、策略）→ `generate_template`
+- [x] 3D 场景基础支持（地形、碰撞、摄像机控制）→ `generate_scene_3d`
+- [x] Godot Asset Library 集成（一键搜索下载）→ `fetch_asset`
 
 #### 阶段 D — 生态
 - [ ] npm 发布（`npx godot-mcp-server` 直接使用）
