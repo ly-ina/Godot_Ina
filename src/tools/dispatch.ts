@@ -30,7 +30,8 @@ import { searchCode, type SearchCodeArgs } from "./search_code.js";
 import { analyzeDeps, type AnalyzeDepsArgs } from "./analyze_deps.js";
 import { batchEdit, type BatchEditArgs } from "./batch_edit.js";
 import { launchEditor, type LaunchEditorArgs } from "./launch_editor.js";
-import { generateSpriteSheet, type GenerateSpriteSheetArgs } from "./generate_sprite_sheet.js";
+import { generateSpriteSheet, type CharacterPipelineArgs } from "./generate_sprite_sheet.js";
+import { getWorkbenchStatus } from "../workbench/pipeline.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -346,15 +347,17 @@ export function getToolDefinitions(): ToolDefinition[] {
     },
     {
       name: "generate_sprite_sheet",
-      description: "Generate multi-frame 2D character sprite sheets via AI Game Workbench (github.com/kazusa000/ai_game_workbench). Creates SpriteFrames .tres + AnimatedSprite2D scene for Godot.",
+      description: "AI Game Workbench 集成管线 — 一键生成 2D 角色精灵表。支持高清/像素模块，内置提示词模板和参考图，自动生成 SpriteFrames 和 AnimatedSprite2D 场景。需要配置 API key (src/workbench/config.json)。",
       inputSchema: {
         type: "object",
         properties: {
-          project_path: { type: "string", description: "Godot project root path" },
-          name: { type: "string", description: "Character name" },
-          workbench_url: { type: "string", description: "AI Game Workbench URL (default: http://127.0.0.1:8787)" },
-          character_id: { type: "string", description: "Existing Workbench character ID (optional)" },
-          export_size: { type: "number", description: "Export frame size in px (256/384/512/1024, default: 512)" },
+          project_path: { type: "string", description: "Godot 项目路径" },
+          name: { type: "string", description: "角色名称" },
+          description: { type: "string", description: "角色描述（如：红瞳白发哥特少女，黑色洋装）" },
+          module: { type: "string", enum: ["hd", "pixel"], description: "模块: hd=高清2D, pixel=像素 (默认: hd)" },
+          actions: { type: "array", items: { type: "string" }, description: "动作列表 (默认: [idle, walk])" },
+          reference: { type: "string", description: "参考图路径（可选）" },
+          api_key: { type: "string", description: "AI API key（可选，推荐在 config.json 中配置）" },
         },
         required: ["project_path", "name"],
       },
@@ -520,9 +523,14 @@ export function executeTool(name: string, args: unknown): ToolResponse {
         content: [{ type: "text", text: generateSpriteSheet({
           project_path: parsedArgs.project_path as string,
           name: parsedArgs.name as string,
-          workbench_url: parsedArgs.workbench_url as string | undefined,
-          character_id: parsedArgs.character_id as string | undefined,
-          export_size: parsedArgs.export_size as number | undefined,
+          description: parsedArgs.description as string,
+          module: (parsedArgs.module as "hd" | "pixel") || "hd",
+          actions: parsedArgs.actions as string[] | undefined,
+          reference: parsedArgs.reference as string | undefined,
+          api_url: parsedArgs.api_url as string | undefined,
+          api_key: parsedArgs.api_key as string | undefined,
+          model: parsedArgs.model as string | undefined,
+          ffmpeg_path: parsedArgs.ffmpeg_path as string | undefined,
         }) }],
       };
     }

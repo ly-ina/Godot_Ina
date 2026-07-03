@@ -1,0 +1,9 @@
+// AI Game Workbench 配置模板
+// 复制此文件为 config.json 并填入你的 API key
+{
+  "api_url": "https://api.openai.com/v1",
+  "api_key": "",
+  "model": "gpt-4o",
+  "image_model": "dall-e-3",
+  "ffmpeg_path": "ffmpeg"
+}
