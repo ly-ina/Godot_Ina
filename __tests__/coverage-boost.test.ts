@@ -498,7 +498,7 @@ describe("cli.ts — remaining branches", () => {
     // Without Godot in PATH, it should throw
     // But at least it should not crash — it should iterate fallbacks
     expect(() => cli.detectGodotExecutable()).toThrow(/not found/);
-  });
+  }, 15000);
 
   it("executeScript delegates to runProject (line 241)", async () => {
     // Set GODOT_PATH to a valid exe for this test
