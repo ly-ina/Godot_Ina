@@ -1,0 +1,4 @@
+; Test fixture project config
+config_version=5
+[application]
+config/name="TestFixtures"
