@@ -64,6 +64,16 @@
 
 ---
 
+## 相关仓库
+
+| 项目 | 地址 | 说明 |
+|------|------|------|
+| 核心 | `ly-ina/Godot_Ina` | 本仓库：MCP 服务器 |
+| 编辑器插件 | [`ly-ina/godot-mcp-plugin`](https://github.com/ly-ina/godot-mcp-plugin) | Godot 编辑器内启停 MCP |
+| 场景预览 | [`ly-ina/godot-mcp-preview`](https://github.com/ly-ina/godot-mcp-preview) | 浏览器查看 .tscn 场景树 |
+
+---
+
 ## 安装
 
 需要 Node.js 20+。Godot 是可选的——只有 `run_project` 和 `execute_gdscript` 需要。
