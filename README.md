@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml/badge.svg)](https://github.com/ly-ina/Godot_Ina/actions/workflows/ci.yml)
 
-让 AI 直接读写 Godot 项目文件。17 个核心工具，286 个测试。
+让 AI 直接读写 Godot 项目文件。18 个核心工具，286 个测试。
 
 ---
 

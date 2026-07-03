@@ -30,6 +30,7 @@ import { searchCode, type SearchCodeArgs } from "./search_code.js";
 import { analyzeDeps, type AnalyzeDepsArgs } from "./analyze_deps.js";
 import { batchEdit, type BatchEditArgs } from "./batch_edit.js";
 import { launchEditor, type LaunchEditorArgs } from "./launch_editor.js";
+import { generateSpriteSheet, type GenerateSpriteSheetArgs } from "./generate_sprite_sheet.js";
 
 export interface ToolResponse {
   content: Array<{ type: string; text: string }>;
@@ -343,6 +344,21 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ["project_path"],
       },
     },
+    {
+      name: "generate_sprite_sheet",
+      description: "Generate multi-frame 2D character sprite sheets via AI Game Workbench (github.com/kazusa000/ai_game_workbench). Creates SpriteFrames .tres + AnimatedSprite2D scene for Godot.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          project_path: { type: "string", description: "Godot project root path" },
+          name: { type: "string", description: "Character name" },
+          workbench_url: { type: "string", description: "AI Game Workbench URL (default: http://127.0.0.1:8787)" },
+          character_id: { type: "string", description: "Existing Workbench character ID (optional)" },
+          export_size: { type: "number", description: "Export frame size in px (256/384/512/1024, default: 512)" },
+        },
+        required: ["project_path", "name"],
+      },
+    },
   ];
 }
 
@@ -494,6 +510,19 @@ export function executeTool(name: string, args: unknown): ToolResponse {
           context: parsedArgs.context as string | undefined,
           timeout: parsedArgs.timeout as number | undefined,
           detach: parsedArgs.detach as boolean | undefined,
+        }) }],
+      };
+    }
+
+    // --- generate_sprite_sheet ---
+    if (name === "generate_sprite_sheet") {
+      return {
+        content: [{ type: "text", text: generateSpriteSheet({
+          project_path: parsedArgs.project_path as string,
+          name: parsedArgs.name as string,
+          workbench_url: parsedArgs.workbench_url as string | undefined,
+          character_id: parsedArgs.character_id as string | undefined,
+          export_size: parsedArgs.export_size as number | undefined,
         }) }],
       };
     }
