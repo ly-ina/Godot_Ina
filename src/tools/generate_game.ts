@@ -1,4 +1,5 @@
 // Consolidated game system generator. Call with type to generate specific systems.
+// Colors and dimensions from shared theme config (src/config/game-theme.ts) for consistency.
 import { generateComponent } from "./generate_component.js";
 import { generateTerrain } from "./generate_terrain.js";
 import { generateBehaviorTree } from "./generate_behavior_tree.js";
