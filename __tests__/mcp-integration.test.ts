@@ -25,18 +25,29 @@ function sendRequest(method: string, params?: Record<string, unknown>): Promise<
     const request = JSON.stringify({ jsonrpc: "2.0", id, method, params: params || {} });
     stdoutBuffer = "";
     const timeout = setTimeout(() => reject(new Error("Response timeout")), 10000);
-    server.stdout!.once("data", (data: Buffer) => {
-      clearTimeout(timeout);
-      const response = data.toString().trim();
-      try { resolve(JSON.parse(response)); }
-      catch {
-        const lines = response.split("\n");
+
+    // Accumulate data until a complete JSON-RPC response (newline-delimited)
+    const onData = (data: Buffer) => {
+      stdoutBuffer += data.toString();
+      const lines = stdoutBuffer.split("\n");
+      // If we have at least one complete line, try to parse the first one
+      if (lines.length >= 2) {
         for (const line of lines) {
-          try { resolve(JSON.parse(line)); return; } catch {}
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line);
+            clearTimeout(timeout);
+            server?.stdout?.removeListener("data", onData);
+            resolve(parsed);
+            return;
+          } catch {
+            // Incomplete JSON — keep buffering
+          }
         }
-        reject(new Error(`Invalid JSON: ${response.substring(0, 200)}`));
       }
-    });
+    };
+
+    server.stdout!.on("data", onData);
     server.stdin.write(request + "\n");
   });
 }
