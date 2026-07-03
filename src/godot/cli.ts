@@ -48,21 +48,16 @@ export function detectGodotExecutable(): string {
     }
   }
 
-  // Try to find via PATH
-  try {
-    const whichResult = execSync("which godot 2>/dev/null || where godot 2>NUL", {
-      encoding: "utf-8",
-      timeout: 5000,
-    }).trim();
-    if (whichResult) {
-      // `where` returns multiple lines on Windows, take the first
-      const firstPath = whichResult.split("\n")[0].trim();
-      if (firstPath && fs.existsSync(firstPath)) {
-        return firstPath;
-      }
+  // Try to find via PATH using Node.js (fast, no subprocess)
+  const pathDirs = (process.env.PATH || "")
+    .split(path.delimiter)
+    .filter(Boolean);
+  const godotName = process.platform === "win32" ? "godot.exe" : "godot";
+  for (const dir of pathDirs) {
+    const candidate = path.join(dir, godotName);
+    if (fs.existsSync(candidate)) {
+      return candidate;
     }
-  } catch {
-    // Not found in PATH
   }
 
   throw new Error(
