@@ -29,7 +29,6 @@ jobs:
           # macOS + Node 20 always times out on GitHub Actions runners
           - os: macos-latest
             node-version: 20
-        node-version: [20, 22]
         include:
           # Also test on latest Ubuntu with latest Node
           - os: ubuntu-24.04
