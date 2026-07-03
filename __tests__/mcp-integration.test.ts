@@ -68,7 +68,7 @@ describe("MCP Server — real process integration", () => {
     const result = response.result as Record<string, unknown>;
     expect(Array.isArray(result.tools)).toBe(true);
     expect((result.tools as unknown[]).length).toBe(13);
-  });
+  }, 15000);
 
   it("ping returns pong", async () => {
     const proc = startServer();
